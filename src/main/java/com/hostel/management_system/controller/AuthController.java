@@ -57,6 +57,7 @@ public class AuthController {
             case "ROLE_ADMIN"      -> "redirect:/admin/dashboard";
             case "ROLE_WARDEN"     -> "redirect:/warden/dashboard";
             case "ROLE_ACCOUNTANT" -> "redirect:/accountant/dashboard";
+            case "ROLE_MAINTENANCE" -> "redirect:/reports";
             default -> "redirect:/login";
         };
     }

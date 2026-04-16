@@ -26,6 +26,7 @@ public class SecurityConfig {
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/warden/**").hasRole("WARDEN")
                 .requestMatchers("/accountant/**").hasRole("ACCOUNTANT")
+                .requestMatchers("/reports/**").hasAnyRole("ADMIN", "WARDEN", "ACCOUNTANT", "MAINTENANCE")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

@@ -35,7 +35,8 @@
 <body>
   <section class="card">
     <h1>Accountant Dashboard</h1>
-    <p>Your login is working correctly. This dashboard route is available now, but the accountant-specific workflows still need to be built.</p>
+    <p>Review payment activity, refund requests, and export financial reports for accounting records.</p>
+    <a th:href="@{/reports(type='payment')}">Generate Payment Report</a>
     <a th:href="@{/login}">Back to login</a>
   </section>
 </body>

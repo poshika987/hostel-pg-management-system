@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Generate Reports</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root { --bg:#0d1117; --surface:#151b23; --surface2:#1f2733; --border:#303846; --text:#edf2f7; --muted:#94a3b8; --accent:#2dd4bf; --accent2:#f59e0b; --danger:#fb7185; --ok:#86efac; }
+body { min-height:100vh; background:var(--bg); color:var(--text); font-family:'Sora', sans-serif; }
+.header { padding:2rem; display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; border-bottom:1px solid var(--border); background:var(--surface); }
+h1 { font-size:1.65rem; }
+p { color:var(--muted); margin-top:.35rem; font-size:.9rem; line-height:1.55; }
+.actions { display:flex; flex-wrap:wrap; gap:.65rem; }
+.btn, a.btn { border:1px solid var(--border); background:var(--surface2); color:var(--text); text-decoration:none; border-radius:8px; padding:.7rem 1rem; font-weight:700; font-family:'Sora', sans-serif; cursor:pointer; }
+.btn-primary, a.btn-primary { background:var(--accent); color:#042f2e; border-color:var(--accent); }
+.shell { padding:2rem; }
+.panel { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1rem; margin-bottom:1rem; }
+.filters { display:grid; grid-template-columns:1.2fr 1fr 1fr auto; gap:.75rem; align-items:end; }
+label { display:block; color:var(--muted); font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.35rem; }
+select, input { width:100%; background:#0f141b; color:var(--text); border:1px solid var(--border); border-radius:8px; padding:.7rem; font-family:'Sora', sans-serif; }
+.alert { padding:.85rem 1rem; border-radius:8px; margin-bottom:1rem; }
+.alert-error { color:var(--danger); border:1px solid rgba(251,113,133,.35); background:rgba(251,113,133,.1); }
+.summary { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:.75rem; margin-bottom:1rem; }
+.metric { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1rem; }
+.metric span { color:var(--muted); display:block; font-size:.72rem; text-transform:uppercase; font-weight:800; letter-spacing:.08em; }
+.metric strong { display:block; margin-top:.35rem; font-size:1.25rem; color:var(--accent); }
+.report-head { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin:1.5rem 0 1rem; }
+.export-actions { display:flex; gap:.6rem; flex-wrap:wrap; }
+.table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:auto; }
+table { width:100%; border-collapse:collapse; min-width:760px; }
+th { text-align:left; color:var(--muted); background:var(--surface2); padding:.85rem; text-transform:uppercase; font-size:.68rem; letter-spacing:.08em; }
+td { padding:.85rem; border-top:1px solid var(--border); vertical-align:top; font-size:.82rem; color:#d8dee9; }
+.empty { padding:2rem; text-align:center; color:var(--muted); }
+.analytics { display:grid; gap:.55rem; margin-bottom:1rem; }
+.bar-row { display:grid; grid-template-columns:120px 1fr 80px; gap:.75rem; align-items:center; color:var(--muted); font-size:.82rem; }
+.bar { height:8px; background:#0f141b; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.bar-fill { height:100%; background:linear-gradient(90deg, var(--accent), var(--accent2)); }
+@media (max-width:760px) { .header { display:block; padding:1rem; } .actions { margin-top:1rem; } .shell { padding:1rem; } .filters { grid-template-columns:1fr; } .report-head { display:block; } .export-actions { margin-top:.75rem; } }
+</style>
+</head>
+<body>
+<header class="header">
+  <div>
+    <h1>Generate Reports</h1>
+    <p>Prepare operational and financial reports from current system records.</p>
+  </div>
+  <div class="actions">
+    <a class="btn" th:href="@{/redirect-dashboard}">Dashboard</a>
+    <form th:action="@{/logout}" method="post"><button class="btn btn-primary" type="submit">Sign Out</button></form>
+  </div>
+</header>
+
+<main class="shell">
+  <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+  <section class="panel">
+    <form th:action="@{/reports}" method="get" class="filters">
+      <div>
+        <label for="type">Report Type</label>
+        <select id="type" name="type">
+          <option th:each="type : ${types}" th:value="${type}" th:selected="${type == selectedType}"
+                  th:text="${#strings.capitalize(type)} + ' Report'">Payment Report</option>
+        </select>
+      </div>
+      <div>
+        <label for="startDate">Start Date</label>
+        <input id="startDate" type="date" name="startDate" th:value="${startDate}"/>
+      </div>
+      <div>
+        <label for="endDate">End Date</label>
+        <input id="endDate" type="date" name="endDate" th:value="${endDate}"/>
+      </div>
+      <button class="btn btn-primary" type="submit">Generate</button>
+    </form>
+  </section>
+
+  <section class="summary">
+    <div class="metric" th:each="entry : ${report.summary}">
+      <span th:text="${entry.key}">Records</span>
+      <strong th:text="${entry.value}">0</strong>
+    </div>
+  </section>
+
+  <section class="panel" th:if="${selectedType == 'occupancy'}">
+    <label>Dashboard Analytics</label>
+    <div class="analytics">
+      <div class="bar-row" th:each="row : ${report.rows}">
+        <span th:text="'Room ' + ${row[0]}">Room 101</span>
+        <div class="bar">
+          <div class="bar-fill"
+               th:style="'width:' + (${T(java.lang.Integer).parseInt(row[2]) > 0 ? T(java.lang.Integer).parseInt(row[3]) * 100 / T(java.lang.Integer).parseInt(row[2]) : 0}) + '%'"></div>
+        </div>
+        <span th:text="${row[3]} + '/' + ${row[2]}">0/1</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="report-head">
+    <div>
+      <h2 th:text="${report.title}">Payment Report</h2>
+      <p th:if="${!report.hasRows()}">No data is available for the selected report and filters.</p>
+    </div>
+    <div class="export-actions">
+      <a class="btn" th:href="@{/reports/export/pdf(type=${selectedType},startDate=${startDate},endDate=${endDate})}">Export PDF</a>
+      <a class="btn btn-primary" th:href="@{/reports/export/excel(type=${selectedType},startDate=${startDate},endDate=${endDate})}">Export Excel</a>
+    </div>
+  </div>
+
+  <section class="table-wrap" th:if="${report.hasRows()}">
+    <table>
+      <thead>
+        <tr><th th:each="header : ${report.headers}" th:text="${header}">Header</th></tr>
+      </thead>
+      <tbody>
+        <tr th:each="row : ${report.rows}">
+          <td th:each="cell : ${row}" th:text="${cell}">Value</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="panel empty" th:if="${!report.hasRows()}">No report rows found.</section>
+</main>
+</body>
+</html>
