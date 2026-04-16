@@ -149,6 +149,8 @@ CREATE TABLE complaints (
     student_id BIGINT,
     room_id INT,
     assigned_staff_id BIGINT,
+    title VARCHAR(80) NOT NULL,
+    category VARCHAR(50) NOT NULL,
     description TEXT NOT NULL,
 
     status ENUM('PENDING', 'ASSIGNED', 'IN_PROGRESS', 'CLOSED', 'REOPENED') DEFAULT 'PENDING',
@@ -166,6 +168,17 @@ CREATE TABLE complaint_photos (
     photo_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     complaint_id BIGINT,
     file_path VARCHAR(255) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+
+    FOREIGN KEY (complaint_id) REFERENCES complaints(complaint_id)
+);
+
+CREATE TABLE complaint_status_updates (
+    update_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    complaint_id BIGINT NOT NULL,
+    status ENUM('PENDING', 'ASSIGNED', 'IN_PROGRESS', 'CLOSED', 'REOPENED') NOT NULL,
+    note TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (complaint_id) REFERENCES complaints(complaint_id)
 );

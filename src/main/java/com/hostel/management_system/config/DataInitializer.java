@@ -9,6 +9,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 /**
  * Seeds default users, rooms, and rent policy on startup.
  * Creational Pattern – Factory Method: RoomFactory.createRoom() builds typed rooms.
@@ -19,17 +22,29 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private UserRepository userRepository;
     @Autowired private RoomRepository roomRepository;
     @Autowired private RentPolicyRepository rentPolicyRepository;
+    @Autowired private MaintenanceStaffRepository maintenanceStaffRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JdbcTemplate jdbcTemplate;
 
     @Override
     public void run(String... args) {
-        fixAllocationIndexes();
-        fixPaymentSchema();
+        if (isMySql()) {
+            fixAllocationIndexes();
+            fixPaymentSchema();
+        }
         seedUsers();
         seedRooms();
+        seedMaintenanceStaff();
         syncRoomDefaults();
         seedRentPolicy();
+    }
+
+    private boolean isMySql() {
+        try (Connection connection = jdbcTemplate.getDataSource().getConnection()) {
+            return connection.getMetaData().getDatabaseProductName().toLowerCase().contains("mysql");
+        } catch (SQLException ex) {
+            return false;
+        }
     }
 
     private void fixAllocationIndexes() {
@@ -138,6 +153,22 @@ public class DataInitializer implements CommandLineRunner {
             roomRepository.save(RoomFactory.createRoom(401, "DORMITORY"));
             roomRepository.save(RoomFactory.createRoom(402, "DORMITORY"));
         }
+    }
+
+    private void seedMaintenanceStaff() {
+        if (maintenanceStaffRepository.count() == 0) {
+            maintenanceStaffRepository.save(createMaintenanceStaff("Ravi Kumar", "Electrician", "9000011111"));
+            maintenanceStaffRepository.save(createMaintenanceStaff("Anita Rao", "Plumber", "9000022222"));
+            maintenanceStaffRepository.save(createMaintenanceStaff("Kiran Shetty", "General Maintenance", "9000033333"));
+        }
+    }
+
+    private MaintenanceStaff createMaintenanceStaff(String name, String role, String contact) {
+        MaintenanceStaff staff = new MaintenanceStaff();
+        staff.setName(name);
+        staff.setRole(role);
+        staff.setContact(contact);
+        return staff;
     }
 
     private void syncRoomDefaults() {
