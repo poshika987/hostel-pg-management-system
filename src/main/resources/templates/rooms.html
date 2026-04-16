@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Browse Rooms – Hostel Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0f18; --surface: #161923; --surface2: #1e2235; --surface3: #252a42;
+  --accent: #7c6af7; --accent-glow: rgba(124,106,247,.2);
+  --text: #e8eaf6; --muted: #7b80a0; --border: #252a42;
+  --success: #43e97b; --error: #ff5c7a; --warning: #ffa94d;
+  --sidebar-w: 240px;
+}
+body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+/* ── Sidebar (same as dashboard) ── */
+.sidebar {
+  width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 10;
+}
+.sidebar-brand { padding: 1.5rem 1.25rem; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .75rem; }
+.sidebar-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent), #a78bfa);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.sidebar-brand span { font-weight: 700; font-size: .9rem; line-height: 1.2; }
+.sidebar-brand small { color: var(--muted); font-size: .7rem; display: block; }
+.sidebar-nav { flex: 1; padding: 1rem 0; }
+.nav-section { padding: .25rem 1.25rem; font-size: .65rem; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .1em;
+  margin-top: .75rem; margin-bottom: .25rem; }
+.nav-link { display: flex; align-items: center; gap: .75rem; padding: .65rem 1.25rem;
+  color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500;
+  transition: color .15s, background .15s; border-left: 3px solid transparent; }
+.nav-link:hover { color: var(--text); background: var(--surface2); }
+.nav-link.active { color: var(--accent); background: var(--accent-glow); border-left-color: var(--accent); }
+.nav-link .icon { font-size: 1rem; width: 20px; text-align: center; }
+.sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+.user-info { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #a78bfa);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: .8rem; font-weight: 700; color: white; flex-shrink: 0; }
+.user-info-text span { display: block; font-size: .8rem; font-weight: 600; }
+.user-info-text small { color: var(--muted); font-size: .7rem; }
+.btn-logout { width: 100%; padding: .6rem; background: transparent; border: 1px solid var(--border);
+  color: var(--muted); border-radius: 8px; font-size: .8rem; font-family: 'Sora', sans-serif;
+  cursor: pointer; transition: all .2s; text-align: center; text-decoration: none; display: block; }
+.btn-logout:hover { border-color: var(--error); color: var(--error); background: rgba(255,92,122,.08); }
+
+/* ── Main ── */
+.main { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; }
+.page-header { margin-bottom: 2rem; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; }
+.page-header p  { color: var(--muted); font-size: .875rem; margin-top: .25rem; }
+
+.alert { padding: .85rem 1rem; border-radius: 10px; font-size: .875rem; margin-bottom: 1.5rem; }
+.alert-success { background: rgba(67,233,123,.1); border: 1px solid rgba(67,233,123,.3); color: var(--success); }
+.alert-error   { background: rgba(255,92,122,.1); border: 1px solid rgba(255,92,122,.3); color: var(--error); }
+.alert-info    { background: rgba(124,106,247,.1); border: 1px solid rgba(124,106,247,.3); color: #a78bfa; }
+
+/* ── Filter bar ── */
+.filter-bar { display: flex; gap: .75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.filter-btn {
+  padding: .45rem 1rem; background: var(--surface); border: 1px solid var(--border);
+  color: var(--muted); border-radius: 100px; font-size: .8rem; font-weight: 600;
+  font-family: 'Sora', sans-serif; cursor: pointer; transition: all .15s;
+}
+.filter-btn:hover, .filter-btn.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+
+/* ── Room grid ── */
+.rooms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+.room-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  overflow: hidden; transition: transform .2s, box-shadow .2s;
+}
+.room-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,.35); }
+.room-card.full   { opacity: .65; }
+
+.room-header {
+  padding: 1.25rem 1.25rem .75rem;
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.room-number { font-size: 1.1rem; font-weight: 700; }
+.room-type-tag {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  padding: .2rem .65rem; border-radius: 100px;
+}
+.type-single    { background: rgba(124,106,247,.15); color: var(--accent); }
+.type-double    { background: rgba(67,233,123,.15);  color: var(--success); }
+.type-triple    { background: rgba(255,169,77,.15);  color: var(--warning); }
+.type-dormitory { background: rgba(255,92,122,.15);  color: var(--error); }
+
+.room-body { padding: 0 1.25rem 1.25rem; }
+.room-stats { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin: .75rem 0; }
+.room-stat label { font-size: .65rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.room-stat span  { display: block; font-size: .9rem; font-weight: 600; margin-top: .15rem; }
+
+.capacity-bar { height: 5px; background: var(--surface2); border-radius: 100px; margin: .75rem 0; overflow: hidden; }
+.capacity-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--accent), #a78bfa); transition: width .4s; }
+.capacity-fill.warn { background: linear-gradient(90deg, var(--warning), #ff8c00); }
+.capacity-fill.full { background: linear-gradient(90deg, var(--error), #c0392b); }
+
+.capacity-label { font-size: .75rem; color: var(--muted); display: flex; justify-content: space-between; }
+.capacity-label strong { color: var(--text); }
+
+.status-chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .72rem; font-weight: 700; padding: .25rem .7rem; border-radius: 100px; margin-top: .5rem;
+}
+.chip-available { background: rgba(67,233,123,.12); color: var(--success); }
+.chip-full      { background: rgba(255,92,122,.12); color: var(--error); }
+
+.room-footer { padding: .75rem 1.25rem 1.25rem; }
+.btn-book {
+  width: 100%; padding: .7rem; background: linear-gradient(135deg, var(--accent), #a78bfa);
+  border: none; color: white; border-radius: 10px; font-size: .875rem; font-weight: 600;
+  font-family: 'Sora', sans-serif; cursor: pointer;
+  transition: opacity .2s, transform .15s; box-shadow: 0 4px 14px var(--accent-glow);
+}
+.btn-book:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+.btn-book:disabled { opacity: .4; cursor: not-allowed; background: var(--surface2);
+  border: 1px solid var(--border); color: var(--muted); box-shadow: none; }
+
+/* Current allocation banner */
+.current-room-banner {
+  background: linear-gradient(135deg, rgba(124,106,247,.15), rgba(167,139,250,.1));
+  border: 1px solid rgba(124,106,247,.3); border-radius: 12px;
+  padding: 1rem 1.25rem; margin-bottom: 1.5rem;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem;
+}
+.current-room-banner .crb-info { font-size: .875rem; }
+.current-room-banner .crb-info strong { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-icon">🏠</div>
+    <div><span>Hostel MS</span><small>Student Portal</small></div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Menu</div>
+    <a href="/student/dashboard" class="nav-link"><span class="icon">⊞</span> Dashboard</a>
+    <a href="/student/rooms" class="nav-link active"><span class="icon">🚪</span> Browse Rooms</a>
+    <!-- <div class="nav-section">Account</div>
+    <a href="#" class="nav-link"><span class="icon">👤</span> Profile</a> -->
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar" th:text="${student.name != null ? student.name.substring(0,1).toUpperCase() : 'S'}">S</div>
+      <div class="user-info-text">
+        <span th:text="${student.name}">Student</span>
+        <small th:text="${student.studentCode}">Code</small>
+      </div>
+    </div>
+    <form th:action="@{/logout}" method="post">
+      <button type="submit" class="btn-logout">⎋ Sign Out</button>
+    </form>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+  <div class="page-header">
+    <h1>Browse Rooms</h1>
+    <p>Select an available room to submit a booking request.</p>
+  </div>
+
+  <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+  <div class="alert alert-error"   th:if="${errorMessage}"   th:text="${errorMessage}"></div>
+
+  <!-- Current allocation notice -->
+  <div class="current-room-banner" th:if="${currentAllocation != null}">
+    <div class="crb-info">
+      You currently occupy <strong th:text="'Room ' + ${currentAllocation.room.roomId}">Room X</strong>
+      (<span th:text="${currentAllocation.room.type}">TYPE</span>).
+      Vacate first to book a different room.
+    </div>
+    <form th:action="@{/student/vacate}" method="post" onsubmit="return confirm('Vacate your current room?');">
+      <button type="submit" style="padding:.45rem 1rem;background:rgba(255,92,122,.15);border:1px solid rgba(255,92,122,.3);color:#ff5c7a;border-radius:8px;font-size:.8rem;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer;">
+        Vacate Room
+      </button>
+    </form>
+  </div>
+
+  <!-- Pending booking notice -->
+  <div class="alert alert-info" th:if="${hasPendingBooking}">
+    ⏳ You have a pending booking request. Please wait for it to be processed before making another.
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterRooms('all', this)">All Rooms</button>
+  </div>
+
+  <!-- Rooms grid -->
+  <div class="rooms-grid" id="roomsGrid">
+    <div th:each="room : ${rooms}" th:data-type="${room.type}"
+         th:class="${room.status.name() == 'FULL' ? 'room-card full' : 'room-card'}">
+
+      <div class="room-header">
+        <div class="room-number" th:text="'Room ' + ${room.roomId}">Room 101</div>
+        <div th:class="'room-type-tag type-' + ${room.type.toLowerCase()}" th:text="${room.type}">SINGLE</div>
+      </div>
+
+      <div class="room-body">
+        <div class="room-stats">
+          <div class="room-stat">
+            <label>Monthly Rent</label>
+            <span th:text="'₹' + ${room.price}">₹8,000</span>
+          </div>
+          <div class="room-stat">
+            <label>Available Slots</label>
+            <span th:text="${room.availableSlots} + '/' + ${room.capacity}">1/1</span>
+          </div>
+        </div>
+
+        <!-- Occupancy bar -->
+        <div class="capacity-bar">
+          <div th:class="${room.occupiedCount >= room.capacity ? 'capacity-fill full' :
+                           room.occupiedCount >= room.capacity * 0.7 ? 'capacity-fill warn' : 'capacity-fill'}"
+               th:style="'width:' + (${room.capacity > 0 ? room.occupiedCount * 100 / room.capacity : 0}) + '%'"></div>
+        </div>
+        <div class="capacity-label">
+          <span>Occupancy</span>
+          <strong th:text="${room.occupiedCount} + '/' + ${room.capacity}">0/1</strong>
+        </div>
+
+        <div th:if="${room.status.name() == 'AVAILABLE'}" class="status-chip chip-available">● Available</div>
+        <div th:if="${room.status.name() == 'FULL'}"      class="status-chip chip-full">● Full</div>
+      </div>
+
+      <div class="room-footer">
+        <form th:action="@{/student/book}" method="post">
+          <input type="hidden" name="roomId" th:value="${room.roomId}"/>
+          <button type="submit" class="btn-book"
+                  th:disabled="${room.status.name() == 'FULL' or hasActiveAllocation or hasPendingBooking}"
+                  th:text="${room.status.name() == 'FULL' ? 'Room Full' :
+                             hasActiveAllocation ? 'Already Allocated' :
+                             hasPendingBooking ? 'Request Pending' : 'Request Booking'}">
+            Request Booking
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+function filterRooms(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#roomsGrid > div').forEach(card => {
+    card.style.display = (type === 'all' || card.dataset.type === type) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

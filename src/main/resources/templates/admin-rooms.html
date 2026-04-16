@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Room Management – Hostel Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0c14; --surface: #11141f; --surface2: #181c2e;
+  --accent: #6c63ff; --accent2: #ff6584; --accent3: #43e97b;
+  --text: #e4e8f7; --muted: #6e738f; --border: #1f2540;
+  --success: #43e97b; --error: #ff5c7a; --warning: #ffa94d;
+  --sidebar-w: 240px;
+}
+body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+.sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 10; }
+.sidebar-brand { padding: 1.5rem 1.25rem; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .75rem; }
+.sidebar-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.sidebar-brand span { font-weight: 700; font-size: .9rem; }
+.sidebar-brand small { color: var(--muted); font-size: .7rem; display: block; }
+.sidebar-nav { flex: 1; padding: 1rem 0; }
+.nav-section { padding: .25rem 1.25rem; font-size: .65rem; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin: .75rem 0 .25rem; }
+.nav-link { display: flex; align-items: center; gap: .75rem; padding: .65rem 1.25rem;
+  color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500;
+  transition: all .15s; border-left: 3px solid transparent; }
+.nav-link:hover { color: var(--text); background: var(--surface2); }
+.nav-link.active { color: var(--accent); background: rgba(108,99,255,.1); border-left-color: var(--accent); }
+.sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+.user-chip { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.admin-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: .8rem; font-weight: 700; color: white; }
+.user-chip-text span { display: block; font-size: .8rem; font-weight: 600; }
+.user-chip-text small { color: var(--muted); font-size: .7rem; }
+.btn-logout { width: 100%; padding: .6rem; background: transparent; border: 1px solid var(--border);
+  color: var(--muted); border-radius: 8px; font-size: .8rem; font-family: 'Sora', sans-serif;
+  cursor: pointer; transition: all .2s; }
+.btn-logout:hover { border-color: #ff6584; color: #ff6584; }
+
+.main { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; }
+.page-header { margin-bottom: 2rem; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; }
+.page-header p  { color: var(--muted); font-size: .875rem; margin-top: .25rem; }
+.alert { padding: .85rem 1rem; border-radius: 10px; font-size: .875rem; margin-bottom: 1.25rem; }
+.alert-success { background: rgba(67,233,123,.1); border: 1px solid rgba(67,233,123,.3); color: var(--success); }
+.alert-error { background: rgba(255,92,122,.1); border: 1px solid rgba(255,92,122,.3); color: var(--error); }
+
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead th { padding: .9rem 1.25rem; font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); text-align: left;
+  background: var(--surface2); border-bottom: 1px solid var(--border); }
+tbody td { padding: .9rem 1.25rem; font-size: .875rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,.015); }
+
+.badge { display: inline-flex; align-items: center; padding: .25rem .75rem; border-radius: 100px;
+  font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.badge-available { background: rgba(67,233,123,.12); color: var(--success); border: 1px solid rgba(67,233,123,.3); }
+.badge-full      { background: rgba(255,92,122,.12); color: var(--error);   border: 1px solid rgba(255,92,122,.3); }
+
+.bar-wrap { width: 80px; height: 5px; background: var(--surface2); border-radius: 100px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: .5rem; }
+.bar-fill { height: 100%; border-radius: 100px; }
+.bar-ok   { background: var(--success); }
+.bar-warn { background: var(--warning); }
+.bar-full { background: var(--error); }
+
+.type-badge { font-size: .7rem; padding: .2rem .65rem; border-radius: 100px; font-weight: 700; }
+.t-single    { background: rgba(108,99,255,.15); color: var(--accent); }
+.t-double    { background: rgba(67,233,123,.15);  color: var(--success); }
+.t-triple    { background: rgba(255,169,77,.15);  color: var(--warning); }
+.t-dormitory { background: rgba(255,92,122,.15);  color: var(--error); }
+
+.tenant-list { font-size: .8rem; color: var(--muted); }
+.tenant-list span { display: inline-block; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: .15rem .5rem; margin: .15rem; color: var(--text); font-size: .75rem; }
+.rent-form { display: flex; align-items: center; gap: .5rem; }
+.rent-input {
+  width: 110px; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: .45rem .6rem; border-radius: 8px; font-size: .8rem; font-family: 'Sora', sans-serif;
+}
+.btn-save {
+  background: linear-gradient(135deg, var(--accent2), var(--accent)); color: white; border: none;
+  border-radius: 8px; padding: .45rem .8rem; font-size: .78rem; font-weight: 600; font-family: 'Sora', sans-serif; cursor: pointer;
+}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-icon">🏠</div>
+    <div><span>Hostel MS</span><small>Admin Panel</small></div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Management</div>
+    <a href="/admin/dashboard" class="nav-link"><span>⊞</span> &nbsp;Dashboard</a>
+    <a href="/admin/bookings" class="nav-link"><span>📋</span> &nbsp;Booking Requests</a>
+    <a href="/admin/rooms" class="nav-link active"><span>🚪</span> &nbsp;Room Management</a>
+    <a href="/admin/refunds" class="nav-link"><span>💸</span> &nbsp;Refund Requests</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="admin-avatar">A</div>
+      <div class="user-chip-text"><span>Administrator</span><small>admin@hostel.com</small></div>
+    </div>
+    <form th:action="@{/logout}" method="post">
+      <button type="submit" class="btn-logout">⎋ Sign Out</button>
+    </form>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <h1>Room Management</h1>
+    <p>Full overview of every room and its current occupants.</p>
+  </div>
+
+  <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+  <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Room</th>
+          <th>Type</th>
+          <th>Occupancy</th>
+          <th>Monthly Rent</th>
+          <th>Status</th>
+          <th>Current Tenants</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="room : ${rooms}">
+          <td><strong th:text="'Room ' + ${room.roomId}">Room 101</strong></td>
+          <td>
+            <span th:class="'type-badge t-' + ${room.type.toLowerCase()}"
+                  th:text="${room.type}">SINGLE</span>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.5rem;">
+              <div class="bar-wrap">
+                <div th:class="${room.occupiedCount >= room.capacity ? 'bar-fill bar-full' :
+                                 room.occupiedCount >= room.capacity * 0.7 ? 'bar-fill bar-warn' : 'bar-fill bar-ok'}"
+                     th:style="'width:' + (${room.capacity > 0 ? room.occupiedCount * 100 / room.capacity : 0}) + '%'"></div>
+              </div>
+              <span th:text="${room.occupiedCount} + '/' + ${room.capacity}">0/1</span>
+            </div>
+          </td>
+          <td>
+            <form th:action="@{'/admin/rooms/' + ${room.roomId} + '/rent'}" method="post" class="rent-form">
+              <input type="number" name="price" min="1" step="0.01" class="rent-input" th:value="${room.price}"/>
+              <button type="submit" class="btn-save">Save</button>
+            </form>
+          </td>
+          <td>
+            <span th:if="${room.status.name() == 'AVAILABLE'}" class="badge badge-available">● Available</span>
+            <span th:if="${room.status.name() == 'FULL'}"      class="badge badge-full">● Full</span>
+          </td>
+          <td>
+            <div class="tenant-list">
+              <th:block th:each="alloc : ${allocations}">
+                <span th:if="${alloc.room.roomId == room.roomId and alloc.status.name() == 'ACTIVE'}"
+                      th:text="${alloc.student.name}">Tenant</span>
+              </th:block>
+              <span th:if="${room.occupiedCount == 0}" style="color:var(--muted);font-size:.8rem;">—</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>

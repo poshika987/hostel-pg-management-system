@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Dashboard – Hostel Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0c14; --surface: #11141f; --surface2: #181c2e; --surface3: #1f2540;
+  --accent: #6c63ff; --accent2: #ff6584; --accent3: #43e97b;
+  --text: #e4e8f7; --muted: #6e738f; --border: #1f2540;
+  --sidebar-w: 240px;
+}
+body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+.sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 10; }
+.sidebar-brand { padding: 1.5rem 1.25rem; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .75rem; }
+.sidebar-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.sidebar-brand span { font-weight: 700; font-size: .9rem; }
+.sidebar-brand small { color: var(--muted); font-size: .7rem; display: block; }
+.sidebar-nav { flex: 1; padding: 1rem 0; }
+.nav-section { padding: .25rem 1.25rem; font-size: .65rem; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin: .75rem 0 .25rem; }
+.nav-link { display: flex; align-items: center; gap: .75rem; padding: .65rem 1.25rem;
+  color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500;
+  transition: all .15s; border-left: 3px solid transparent; }
+.nav-link:hover { color: var(--text); background: var(--surface2); }
+.nav-link.active { color: var(--accent); background: rgba(108,99,255,.1); border-left-color: var(--accent); }
+.nav-badge { margin-left: auto; background: var(--accent2); color: white;
+  font-size: .65rem; font-weight: 700; padding: .15rem .45rem; border-radius: 100px; }
+.sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+.user-chip { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.admin-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: .8rem; font-weight: 700; color: white; }
+.user-chip-text span { display: block; font-size: .8rem; font-weight: 600; }
+.user-chip-text small { color: var(--muted); font-size: .7rem; }
+.btn-logout { width: 100%; padding: .6rem; background: transparent; border: 1px solid var(--border);
+  color: var(--muted); border-radius: 8px; font-size: .8rem; font-family: 'Sora', sans-serif;
+  cursor: pointer; transition: all .2s; }
+.btn-logout:hover { border-color: #ff6584; color: #ff6584; }
+
+.main { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; }
+.page-header { margin-bottom: 2rem; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; }
+.page-header p  { color: var(--muted); font-size: .875rem; margin-top: .25rem; }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 2.5rem; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 1.5rem; position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.stat-card.blue::before  { background: linear-gradient(90deg, var(--accent), #a78bfa); }
+.stat-card.pink::before  { background: linear-gradient(90deg, var(--accent2), #ff8c42); }
+.stat-card.green::before { background: linear-gradient(90deg, var(--accent3), #38f9d7); }
+
+.stat-icon { font-size: 1.75rem; margin-bottom: .75rem; display: block; }
+.stat-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.stat-value { font-size: 2.2rem; font-weight: 700; margin: .2rem 0 .25rem; }
+.stat-card.blue  .stat-value { color: var(--accent); }
+.stat-card.pink  .stat-value { color: var(--accent2); }
+.stat-card.green .stat-value { color: var(--accent3); }
+.stat-sub { font-size: .75rem; color: var(--muted); }
+
+/* Room status grid */
+.section-title { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+.rooms-overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .75rem; margin-bottom: 2rem; }
+.room-chip {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: .875rem 1rem; display: flex; align-items: center; justify-content: space-between;
+}
+.room-chip-left .rn { font-size: .9rem; font-weight: 700; }
+.room-chip-left .rt { font-size: .65rem; text-transform: uppercase; color: var(--muted); letter-spacing: .06em; margin-top: .1rem; }
+.room-chip-right { text-align: right; }
+.room-chip-right .occ { font-size: .8rem; font-weight: 600; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.dot-green { background: #43e97b; box-shadow: 0 0 6px #43e97b; }
+.dot-red   { background: #ff5c7a; box-shadow: 0 0 6px #ff5c7a; }
+
+.quick-links { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.quick-link-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 1.5rem; text-decoration: none; color: var(--text);
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  display: flex; align-items: center; gap: 1rem;
+}
+.quick-link-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,.3); border-color: var(--accent); }
+.ql-icon { width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+.ql-blue  { background: rgba(108,99,255,.15); }
+.ql-pink  { background: rgba(255,101,132,.15); }
+.ql-green { background: rgba(67,233,123,.15); }
+.ql-text h3 { font-size: .95rem; font-weight: 700; }
+.ql-text p  { font-size: .8rem; color: var(--muted); margin-top: .2rem; }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-icon">🏠</div>
+    <div><span>Hostel MS</span><small>Admin Panel</small></div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Management</div>
+    <a href="/admin/dashboard" class="nav-link active"><span>⊞</span> &nbsp;Dashboard</a>
+    <a href="/admin/bookings" class="nav-link">
+      <span>📋</span> &nbsp;Booking Requests
+      <span class="nav-badge" th:text="${pendingCount}" th:if="${pendingCount > 0}">0</span>
+    </a>
+    <a href="/admin/rooms" class="nav-link"><span>🚪</span> &nbsp;Room Management</a>
+    <a href="/admin/refunds" class="nav-link"><span>💸</span> &nbsp;Refund Requests</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="admin-avatar">A</div>
+      <div class="user-chip-text">
+        <span>Administrator</span><small>admin@hostel.com</small>
+      </div>
+    </div>
+    <form th:action="@{/logout}" method="post">
+      <button type="submit" class="btn-logout">⎋ Sign Out</button>
+    </form>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <h1>Admin Dashboard</h1>
+    <p>Overview of hostel occupancy and pending actions.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card pink">
+      <span class="stat-icon">📋</span>
+      <div class="stat-label">Pending Bookings</div>
+      <div class="stat-value" th:text="${pendingCount}">0</div>
+      <div class="stat-sub">Awaiting your review</div>
+    </div>
+    <div class="stat-card green">
+      <span class="stat-icon">✅</span>
+      <div class="stat-label">Active Allocations</div>
+      <div class="stat-value" th:text="${activeAllocations}">0</div>
+      <div class="stat-sub">Students housed</div>
+    </div>
+    <div class="stat-card blue">
+      <span class="stat-icon">🚪</span>
+      <div class="stat-label">Total Rooms</div>
+      <div class="stat-value" th:text="${totalRooms}">0</div>
+      <div class="stat-sub">In the system</div>
+    </div>
+  </div>
+
+  <!-- Room status overview -->
+  <div class="section-title">Room Status Overview</div>
+  <div class="rooms-overview">
+    <div class="room-chip" th:each="room : ${allRooms}">
+      <div class="room-chip-left">
+        <div class="rn" th:text="'R-' + ${room.roomId}">R-101</div>
+        <div class="rt" th:text="${room.type}">Single</div>
+      </div>
+      <div class="room-chip-right">
+        <div class="occ" th:text="${room.occupiedCount} + '/' + ${room.capacity}">0/1</div>
+        <div th:if="${room.status.name() == 'AVAILABLE'}" class="dot dot-green" style="margin-top:.3rem;"></div>
+        <div th:if="${room.status.name() == 'FULL'}"      class="dot dot-red"   style="margin-top:.3rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick links -->
+  <div class="section-title">Quick Actions</div>
+  <div class="quick-links">
+    <a href="/admin/bookings" class="quick-link-card">
+      <div class="ql-icon ql-pink">📋</div>
+      <div class="ql-text">
+        <h3>Manage Bookings</h3>
+        <p>Approve or reject student booking requests</p>
+      </div>
+    </a>
+    <a href="/admin/rooms" class="quick-link-card">
+      <div class="ql-icon ql-blue">🚪</div>
+      <div class="ql-text">
+        <h3>Room Overview</h3>
+        <p>View all rooms and current allocations</p>
+      </div>
+    </a>
+    <a href="/admin/refunds" class="quick-link-card">
+      <div class="ql-icon ql-green">💸</div>
+      <div class="ql-text">
+        <h3>Refund Requests</h3>
+        <p>Approve student refund requests</p>
+      </div>
+    </a>
+  </div>
+</main>
+</body>
+</html>

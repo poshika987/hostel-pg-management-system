@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Payment History – Hostel Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0f18; --surface: #161923; --surface2: #1e2235;
+  --accent: #7c6af7; --accent-glow: rgba(124,106,247,.2);
+  --text: #e8eaf6; --muted: #7b80a0; --border: #252a42;
+  --success: #43e97b; --error: #ff5c7a; --warning: #ffa94d;
+  --sidebar-w: 240px;
+}
+body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+.sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 10; }
+.sidebar-brand { padding: 1.5rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .75rem; }
+.sidebar-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent), #a78bfa);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.sidebar-brand span { font-weight: 700; font-size: .9rem; }
+.sidebar-brand small { color: var(--muted); font-size: .7rem; display: block; }
+.sidebar-nav { flex: 1; padding: 1rem 0; }
+.nav-section { padding: .25rem 1.25rem; font-size: .65rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .1em; margin: .75rem 0 .25rem; }
+.nav-link { display: flex; align-items: center; gap: .75rem; padding: .65rem 1.25rem;
+  color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500;
+  transition: all .15s; border-left: 3px solid transparent; }
+.nav-link:hover { color: var(--text); background: var(--surface2); }
+.nav-link.active { color: var(--accent); background: var(--accent-glow); border-left-color: var(--accent); }
+.sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+.user-info { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #a78bfa);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: .8rem; font-weight: 700; color: white; }
+.user-info-text span { display: block; font-size: .8rem; font-weight: 600; }
+.user-info-text small { color: var(--muted); font-size: .7rem; }
+.btn-logout { width: 100%; padding: .6rem; background: transparent; border: 1px solid var(--border);
+  color: var(--muted); border-radius: 8px; font-size: .8rem; font-family: 'Sora', sans-serif;
+  cursor: pointer; transition: all .2s; }
+.btn-logout:hover { border-color: var(--error); color: var(--error); }
+.main { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; }
+.page-header { margin-bottom: 2rem; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; }
+.page-header p  { color: var(--muted); font-size: .875rem; margin-top: .25rem; }
+.alert { padding: .85rem 1rem; border-radius: 10px; font-size: .875rem; margin-bottom: 1.5rem; }
+.alert-success { background: rgba(67,233,123,.1); border: 1px solid rgba(67,233,123,.3); color: var(--success); }
+.alert-error   { background: rgba(255,92,122,.1); border: 1px solid rgba(255,92,122,.3); color: var(--error); }
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead th { padding: .9rem 1.25rem; font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); text-align: left;
+  background: var(--surface2); border-bottom: 1px solid var(--border); }
+tbody td { padding: 1rem 1.25rem; font-size: .875rem; border-bottom: 1px solid var(--border); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+.badge { display: inline-flex; align-items: center; padding: .25rem .75rem; border-radius: 100px;
+  font-size: .7rem; font-weight: 700; text-transform: uppercase; }
+.badge-successful { background: rgba(67,233,123,.15); color: var(--success); border: 1px solid rgba(67,233,123,.3); }
+.badge-refund_requested { background: rgba(124,106,247,.15); color: var(--accent); border: 1px solid rgba(124,106,247,.3); }
+.badge-failed     { background: rgba(255,92,122,.15); color: var(--error);   border: 1px solid rgba(255,92,122,.3); }
+.badge-refunded   { background: rgba(255,169,77,.15); color: var(--warning); border: 1px solid rgba(255,169,77,.3); }
+.btn-refund {
+  padding: .4rem .8rem; background: rgba(124,106,247,.15); border: 1px solid rgba(124,106,247,.3);
+  color: var(--accent); border-radius: 8px; font-size: .75rem; font-weight: 700; font-family: 'Sora', sans-serif; cursor: pointer;
+}
+.empty-state { padding: 3rem; text-align: center; color: var(--muted); font-size: .875rem; }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-icon">🏠</div>
+    <div><span>Hostel MS</span><small>Student Portal</small></div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Menu</div>
+    <a href="/student/dashboard" class="nav-link"><span>⊞</span> Dashboard</a>
+    <a href="/student/rooms" class="nav-link"><span>🚪</span> Browse Rooms</a>
+    <div class="nav-section">Payments</div>
+    <a href="/payments/invoice" class="nav-link"><span>🧾</span> My Invoices</a>
+    <a href="/payments/history" class="nav-link active"><span>💳</span> Payment History</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="avatar" th:text="${student != null ? student.name.substring(0,1).toUpperCase() : 'S'}">S</div>
+      <div class="user-info-text">
+        <span th:text="${student != null ? student.name : 'Student'}">Student</span>
+        <small th:text="${student != null ? student.studentCode : ''}">Code</small>
+      </div>
+    </div>
+    <form th:action="@{/logout}" method="post">
+      <button type="submit" class="btn-logout">⎋ Sign Out</button>
+    </form>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <h1>Payment History 💳</h1>
+    <p>All your past rent payments.</p>
+  </div>
+
+  <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+  <div class="alert alert-error"   th:if="${errorMessage}"   th:text="${errorMessage}"></div>
+
+  <div class="table-wrap" th:if="${!payments.isEmpty()}">
+    <table>
+      <thead>
+        <tr>
+          <th>Payment #</th>
+          <th>Invoice #</th>
+          <th>Amount</th>
+          <th>Mode</th>
+          <th>Reference</th>
+          <th>Status</th>
+          <th>Action</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="p : ${payments}">
+          <td th:text="'PMT-' + ${p.paymentId}">PMT-1</td>
+          <td th:text="'INV-' + ${p.invoiceId}">INV-1</td>
+          <td th:text="'₹' + ${p.amount}">₹5000</td>
+          <td th:text="${p.paymentMode != null and p.paymentChannel != null ? p.paymentMode + ' / ' + p.paymentChannel : '—'}">ONLINE / CARD</td>
+          <td th:text="${p.referenceId != null ? p.referenceId : '—'}">TXN-CARD-1234ABCD</td>
+          <td>
+            <span th:class="'badge badge-' + ${p.status.name().toLowerCase()}"
+                  th:text="${p.status}">SUCCESSFUL</span>
+          </td>
+          <td>
+            <form th:if="${p.status.name() == 'SUCCESSFUL'}"
+                  th:action="@{'/payments/refund/' + ${p.paymentId}}" method="post"
+                  onsubmit="return confirm('Request a refund for this payment?');">
+              <button type="submit" class="btn-refund">Request Refund</button>
+            </form>
+            <span th:if="${p.status.name() != 'SUCCESSFUL'}" style="color:var(--muted);font-size:.8rem;">—</span>
+          </td>
+          <td th:text="${#temporals.format(p.paymentDate, 'dd MMM yyyy, HH:mm')}">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="empty-state" th:if="${payments.isEmpty()}">
+    <span style="font-size:2.5rem;display:block;margin-bottom:.75rem;">💳</span>
+    No payment records yet. <a href="/payments/invoice" style="color:var(--accent);">View your invoices</a> to make a payment.
+  </div>
+</main>
+</body>
+</html>

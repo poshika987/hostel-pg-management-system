@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Booking Requests – Hostel Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0c14; --surface: #11141f; --surface2: #181c2e; --surface3: #1f2540;
+  --accent: #6c63ff; --accent2: #ff6584; --accent3: #43e97b;
+  --text: #e4e8f7; --muted: #6e738f; --border: #1f2540;
+  --success: #43e97b; --error: #ff5c7a; --warning: #ffa94d;
+  --sidebar-w: 240px;
+}
+body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+.sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 10; }
+.sidebar-brand { padding: 1.5rem 1.25rem; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .75rem; }
+.sidebar-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.sidebar-brand span { font-weight: 700; font-size: .9rem; }
+.sidebar-brand small { color: var(--muted); font-size: .7rem; display: block; }
+.sidebar-nav { flex: 1; padding: 1rem 0; }
+.nav-section { padding: .25rem 1.25rem; font-size: .65rem; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin: .75rem 0 .25rem; }
+.nav-link { display: flex; align-items: center; gap: .75rem; padding: .65rem 1.25rem;
+  color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500;
+  transition: all .15s; border-left: 3px solid transparent; }
+.nav-link:hover { color: var(--text); background: var(--surface2); }
+.nav-link.active { color: var(--accent); background: rgba(108,99,255,.1); border-left-color: var(--accent); }
+.nav-badge { margin-left: auto; background: var(--accent2); color: white;
+  font-size: .65rem; font-weight: 700; padding: .15rem .45rem; border-radius: 100px; }
+.sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+.user-chip { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.admin-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: .8rem; font-weight: 700; color: white; }
+.user-chip-text span { display: block; font-size: .8rem; font-weight: 600; }
+.user-chip-text small { color: var(--muted); font-size: .7rem; }
+.btn-logout { width: 100%; padding: .6rem; background: transparent; border: 1px solid var(--border);
+  color: var(--muted); border-radius: 8px; font-size: .8rem; font-family: 'Sora', sans-serif;
+  cursor: pointer; transition: all .2s; }
+.btn-logout:hover { border-color: #ff6584; color: #ff6584; }
+
+.main { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; }
+.page-header { margin-bottom: 2rem; display: flex; align-items: flex-start; justify-content: space-between; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; }
+.page-header p  { color: var(--muted); font-size: .875rem; margin-top: .25rem; }
+
+.alert { padding: .85rem 1rem; border-radius: 10px; font-size: .875rem; margin-bottom: 1.5rem; }
+.alert-success { background: rgba(67,233,123,.1); border: 1px solid rgba(67,233,123,.3); color: var(--success); }
+.alert-error   { background: rgba(255,92,122,.1); border: 1px solid rgba(255,92,122,.3); color: var(--error); }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+.tab-btn {
+  padding: .75rem 1.25rem; background: transparent; border: none; border-bottom: 2px solid transparent;
+  color: var(--muted); font-size: .875rem; font-weight: 600; font-family: 'Sora', sans-serif;
+  cursor: pointer; transition: all .2s; margin-bottom: -1px;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn:hover { color: var(--text); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Table */
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  padding: .9rem 1.25rem; font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); text-align: left;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+tbody td { padding: .9rem 1.25rem; font-size: .875rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,.02); }
+
+.student-cell { display: flex; flex-direction: column; }
+.student-cell .name  { font-weight: 600; }
+.student-cell .code  { font-size: .75rem; color: var(--muted); margin-top: .1rem; }
+.student-cell .email { font-size: .75rem; color: var(--muted); }
+
+.room-cell .rn { font-weight: 600; }
+.room-cell .rt { font-size: .75rem; color: var(--muted); margin-top: .1rem; }
+.room-cell .rp { font-size: .75rem; color: var(--accent3); }
+
+.badge {
+  display: inline-flex; align-items: center; padding: .25rem .75rem; border-radius: 100px;
+  font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+}
+.badge-pending   { background: rgba(255,169,77,.12); color: var(--warning); border: 1px solid rgba(255,169,77,.3); }
+.badge-approved  { background: rgba(67,233,123,.12); color: var(--success); border: 1px solid rgba(67,233,123,.3); }
+.badge-rejected  { background: rgba(255,92,122,.12); color: var(--error);   border: 1px solid rgba(255,92,122,.3); }
+.badge-cancelled { background: rgba(110,115,143,.12); color: var(--muted);  border: 1px solid rgba(110,115,143,.3); }
+
+.actions { display: flex; gap: .5rem; align-items: center; }
+.btn-approve {
+  padding: .4rem .9rem; background: rgba(67,233,123,.1); border: 1px solid rgba(67,233,123,.3);
+  color: var(--success); border-radius: 7px; font-size: .78rem; font-weight: 700;
+  font-family: 'Sora', sans-serif; cursor: pointer; transition: all .15s;
+}
+.btn-approve:hover { background: rgba(67,233,123,.2); }
+.btn-reject {
+  padding: .4rem .9rem; background: rgba(255,92,122,.1); border: 1px solid rgba(255,92,122,.3);
+  color: var(--error); border-radius: 7px; font-size: .78rem; font-weight: 700;
+  font-family: 'Sora', sans-serif; cursor: pointer; transition: all .15s;
+}
+.btn-reject:hover { background: rgba(255,92,122,.2); }
+
+.empty-state { padding: 3.5rem; text-align: center; color: var(--muted); }
+.empty-state .ei { font-size: 2.5rem; display: block; margin-bottom: .75rem; }
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-icon">🏠</div>
+    <div><span>Hostel MS</span><small>Admin Panel</small></div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Management</div>
+    <a href="/admin/dashboard" class="nav-link"><span>⊞</span> &nbsp;Dashboard</a>
+    <a href="/admin/bookings" class="nav-link active">
+      <span>📋</span> &nbsp;Booking Requests
+      <span class="nav-badge" th:if="${!pendingBookings.isEmpty()}" th:text="${pendingBookings.size()}">0</span>
+    </a>
+    <a href="/admin/rooms" class="nav-link"><span>🚪</span> &nbsp;Room Management</a>
+    <a href="/admin/refunds" class="nav-link"><span>💸</span> &nbsp;Refund Requests</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="admin-avatar">A</div>
+      <div class="user-chip-text"><span>Administrator</span><small>admin@hostel.com</small></div>
+    </div>
+    <form th:action="@{/logout}" method="post">
+      <button type="submit" class="btn-logout">⎋ Sign Out</button>
+    </form>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1>Booking Requests</h1>
+      <p>Review and process student room booking requests.</p>
+    </div>
+  </div>
+
+  <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+  <div class="alert alert-error"   th:if="${errorMessage}"   th:text="${errorMessage}"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('pending', this)">
+      Pending <span th:if="${!pendingBookings.isEmpty()}"
+        th:text="'(' + ${pendingBookings.size()} + ')'"
+        style="color:#ffa94d;margin-left:.3rem;"></span>
+    </button>
+    <button class="tab-btn" onclick="showTab('all', this)">All Requests</button>
+  </div>
+
+  <!-- PENDING tab -->
+  <div class="tab-content active" id="tab-pending">
+    <div class="table-wrap">
+      <table th:if="${!pendingBookings.isEmpty()}">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student</th>
+            <th>Room</th>
+            <th>Requested</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="b : ${pendingBookings}">
+            <td th:text="${b.bookingId}">1</td>
+            <td>
+              <div class="student-cell">
+                <span class="name" th:text="${b.student.name}">Name</span>
+                <span class="code" th:text="${b.student.studentCode}">Code</span>
+                <span class="email" th:text="${b.student.email}">email</span>
+              </div>
+            </td>
+            <td>
+              <div class="room-cell">
+                <div class="rn" th:text="'Room ' + ${b.room.roomId}">Room 101</div>
+                <div class="rt" th:text="${b.room.type}">SINGLE</div>
+                <div class="rp" th:text="'₹' + ${b.room.price} + '/mo'">₹8000/mo</div>
+              </div>
+            </td>
+            <td th:text="${#temporals.format(b.requestDate, 'dd MMM yyyy, HH:mm')}">—</td>
+            <td><span class="badge badge-pending">PENDING</span></td>
+            <td>
+              <div class="actions">
+                <form th:action="@{'/admin/approve/' + ${b.bookingId}}" method="post"
+                      onsubmit="return confirm('Approve this booking and allocate the room?');">
+                  <button type="submit" class="btn-approve">✓ Approve</button>
+                </form>
+                <form th:action="@{'/admin/reject/' + ${b.bookingId}}" method="post"
+                      onsubmit="return confirm('Reject this booking request?');">
+                  <button type="submit" class="btn-reject">✕ Reject</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="empty-state" th:if="${pendingBookings.isEmpty()}">
+        <span class="ei">✅</span>
+        No pending booking requests. All caught up!
+      </div>
+    </div>
+  </div>
+
+  <!-- ALL tab -->
+  <div class="tab-content" id="tab-all">
+    <div class="table-wrap">
+      <table th:if="${!allBookings.isEmpty()}">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student</th>
+            <th>Room</th>
+            <th>Requested</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="b : ${allBookings}">
+            <td th:text="${b.bookingId}">1</td>
+            <td>
+              <div class="student-cell">
+                <span class="name" th:text="${b.student.name}">Name</span>
+                <span class="code" th:text="${b.student.studentCode}">Code</span>
+              </div>
+            </td>
+            <td>
+              <div class="room-cell">
+                <div class="rn" th:text="'Room ' + ${b.room.roomId}">Room 101</div>
+                <div class="rt" th:text="${b.room.type}">SINGLE</div>
+              </div>
+            </td>
+            <td th:text="${#temporals.format(b.requestDate, 'dd MMM yyyy, HH:mm')}">—</td>
+            <td>
+              <span th:class="'badge badge-' + ${b.status.name().toLowerCase()}"
+                    th:text="${b.status}">PENDING</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="empty-state" th:if="${allBookings.isEmpty()}">
+        <span class="ei">📋</span>
+        No booking records found.
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Payment Checkout</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0f18; --surface: #161923; --surface2: #1e2235; --border: #252a42;
+  --accent: #7c6af7; --accent-glow: rgba(124,106,247,.2); --text: #e8eaf6; --muted: #7b80a0;
+  --success: #43e97b; --error: #ff5c7a; --sidebar-w: 240px;
+}
+body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+.sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; }
+.sidebar-brand { padding: 1.5rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .75rem; }
+.sidebar-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent), #a78bfa);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.sidebar-nav { flex: 1; padding: 1rem 0; }
+.nav-section { padding: .25rem 1.25rem; font-size: .65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin: .75rem 0 .25rem; }
+.nav-link { display: flex; align-items: center; gap: .75rem; padding: .65rem 1.25rem; color: var(--muted); text-decoration: none; font-size: .875rem; font-weight: 500; border-left: 3px solid transparent; }
+.nav-link:hover { color: var(--text); background: var(--surface2); }
+.nav-link.active { color: var(--accent); background: var(--accent-glow); border-left-color: var(--accent); }
+.sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+.btn-logout { width: 100%; padding: .6rem; background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; font-size: .8rem; font-family: 'Sora', sans-serif; cursor: pointer; }
+.main { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; }
+.page-header { margin-bottom: 1.5rem; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; }
+.page-header p { color: var(--muted); margin-top: .25rem; font-size: .9rem; }
+.grid { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; }
+.summary-title, .form-title { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+.summary-row { display: flex; justify-content: space-between; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--border); font-size: .9rem; }
+.summary-row:last-child { border-bottom: none; }
+.summary-row span:first-child { color: var(--muted); }
+.summary-amount { font-size: 1.8rem; font-weight: 700; color: var(--accent); margin-top: .25rem; }
+.alert { padding: .85rem 1rem; border-radius: 10px; font-size: .875rem; margin-bottom: 1rem; }
+.alert-error { background: rgba(255,92,122,.1); border: 1px solid rgba(255,92,122,.3); color: var(--error); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-group { margin-bottom: 1rem; }
+.form-group.full { grid-column: 1 / -1; }
+label { display: block; font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .5rem; }
+input, select {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: .8rem .95rem; border-radius: 10px; font-size: .95rem; font-family: 'Sora', sans-serif;
+}
+.mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-bottom: 1rem; }
+.mode-option {
+  border: 1px solid var(--border); background: var(--surface2); border-radius: 12px; padding: .9rem;
+  cursor: pointer; transition: border-color .2s, transform .15s;
+}
+.mode-option.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+.mode-option strong { display: block; margin-bottom: .2rem; }
+.mode-option small { color: var(--muted); }
+.btn-row { display: flex; gap: .75rem; margin-top: .5rem; }
+.btn-primary, .btn-secondary {
+  padding: .85rem 1.2rem; border-radius: 10px; font-size: .9rem; font-weight: 600; font-family: 'Sora', sans-serif;
+  text-decoration: none; cursor: pointer; border: none;
+}
+.btn-primary { background: linear-gradient(135deg, var(--accent), #a78bfa); color: white; box-shadow: 0 4px 14px var(--accent-glow); }
+.btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.hidden { display: none; }
+@media (max-width: 980px) {
+  .grid { grid-template-columns: 1fr; }
+  .form-grid, .mode-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-icon">🏠</div>
+    <div><span style="font-weight:700;font-size:.9rem;">Hostel MS</span><small style="display:block;color:#7b80a0;font-size:.7rem;">Student Portal</small></div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Menu</div>
+    <a href="/student/dashboard" class="nav-link"><span>⊞</span> Dashboard</a>
+    <a href="/student/rooms" class="nav-link"><span>🚪</span> Browse Rooms</a>
+    <div class="nav-section">Payments</div>
+    <a href="/payments/invoice" class="nav-link active"><span>🧾</span> My Invoices</a>
+    <a href="/payments/history" class="nav-link"><span>💳</span> Payment History</a>
+  </div>
+  <div class="sidebar-footer">
+    <form th:action="@{/logout}" method="post">
+      <button type="submit" class="btn-logout">⎋ Sign Out</button>
+    </form>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <h1>Payment Checkout</h1>
+    <p>Simulate a basic rent payment with card, UPI, or offline cash acknowledgement.</p>
+  </div>
+
+  <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+  <div class="grid">
+    <section class="panel">
+      <div class="summary-title">Invoice Summary</div>
+      <div class="summary-row"><span>Invoice</span><strong th:text="'INV-' + ${invoice.invoiceId}">INV-1</strong></div>
+      <div class="summary-row"><span>Status</span><strong th:text="${invoice.status}">PENDING</strong></div>
+      <div class="summary-row"><span>Due Date</span><strong th:text="${#temporals.format(invoice.dueDate, 'dd MMM yyyy')}">16 Apr 2026</strong></div>
+      <div class="summary-row"><span>Amount</span><strong th:text="'₹' + ${invoice.amount}">₹8000</strong></div>
+      <div class="summary-amount" th:text="'₹' + ${invoice.amount}">₹8000</div>
+    </section>
+
+    <section class="panel">
+      <div class="form-title">Enter Payment Details</div>
+      <form th:action="@{/payments/pay}" method="post" id="checkoutForm">
+        <input type="hidden" name="invoiceId" th:value="${invoice.invoiceId}"/>
+        <input type="hidden" name="mode" id="modeInput" value="ONLINE"/>
+        <input type="hidden" name="paymentChannel" id="channelInput" value="CARD"/>
+
+        <div class="mode-grid">
+          <button type="button" class="mode-option active" data-mode="ONLINE" data-channel="CARD">
+            <strong>Card</strong><small>16-digit test payment</small>
+          </button>
+          <button type="button" class="mode-option" data-mode="ONLINE" data-channel="UPI">
+            <strong>UPI</strong><small>name@bank style ID</small>
+          </button>
+          <button type="button" class="mode-option" data-mode="OFFLINE" data-channel="CASH">
+            <strong>Cash</strong><small>simulate desk payment</small>
+          </button>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group full">
+            <label for="payerName">Payer Name</label>
+            <input type="text" id="payerName" name="payerName" placeholder="Enter payer name" required/>
+          </div>
+
+          <div id="cardFields" class="form-grid full">
+            <div class="form-group full">
+              <label for="cardNumber">Card Number</label>
+              <input type="text" id="cardNumber" name="cardNumber" placeholder="4111111111111111" maxlength="19"/>
+            </div>
+            <div class="form-group">
+              <label for="expiry">Expiry</label>
+              <input type="text" id="expiry" name="expiry" placeholder="MM/YY" maxlength="5"/>
+            </div>
+            <div class="form-group">
+              <label for="cvv">CVV</label>
+              <input type="password" id="cvv" name="cvv" placeholder="123" maxlength="3"/>
+            </div>
+          </div>
+
+          <div id="upiFields" class="form-group full hidden">
+            <label for="upiId">UPI ID</label>
+            <input type="text" id="upiId" name="upiId" placeholder="mahi@oksbi"/>
+          </div>
+
+          <div id="cashFields" class="form-group full hidden" style="color:#7b80a0;font-size:.9rem;line-height:1.6;">
+            Offline payment will create a receipt entry immediately so you can demo the payment history flow.
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button type="submit" class="btn-primary">Confirm Payment</button>
+          <a href="/payments/invoice" class="btn-secondary">Back</a>
+        </div>
+      </form>
+    </section>
+  </div>
+</main>
+
+<script>
+const options = document.querySelectorAll('.mode-option');
+const modeInput = document.getElementById('modeInput');
+const channelInput = document.getElementById('channelInput');
+const cardFields = document.getElementById('cardFields');
+const upiFields = document.getElementById('upiFields');
+const cashFields = document.getElementById('cashFields');
+const cardInputs = ['cardNumber', 'expiry', 'cvv'].map(id => document.getElementById(id));
+const upiInput = document.getElementById('upiId');
+
+function setMode(mode, channel, activeButton) {
+  options.forEach(option => option.classList.remove('active'));
+  activeButton.classList.add('active');
+  modeInput.value = mode;
+  channelInput.value = channel;
+
+  cardFields.classList.toggle('hidden', channel !== 'CARD');
+  upiFields.classList.toggle('hidden', channel !== 'UPI');
+  cashFields.classList.toggle('hidden', channel !== 'CASH');
+
+  cardInputs.forEach(input => input.required = channel === 'CARD');
+  upiInput.required = channel === 'UPI';
+}
+
+options.forEach(option => {
+  option.addEventListener('click', () => setMode(option.dataset.mode, option.dataset.channel, option));
+});
+</script>
+</body>
+</html>
