@@ -130,7 +130,6 @@ tbody tr:hover { background: rgba(255,255,255,.02); }
       <span class="nav-badge" th:if="${!pendingBookings.isEmpty()}" th:text="${pendingBookings.size()}">0</span>
     </a>
     <a href="/admin/rooms" class="nav-link"><span>🚪</span> &nbsp;Room Management</a>
-    <a href="/admin/refunds" class="nav-link"><span>💸</span> &nbsp;Refund Requests</a>
   </div>
   <div class="sidebar-footer">
     <div class="user-chip">
@@ -260,6 +259,38 @@ tbody tr:hover { background: rgba(255,255,255,.02); }
         No booking records found.
       </div>
     </div>
+  </div>
+  <div class="page-header" style="margin-top:2rem;">
+    <div>
+      <h1>Room Change / Vacate Requests</h1>
+      <p>Approve or reject tenant room-change and vacate requests.</p>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table th:if="${pendingRoomRequests != null and !pendingRoomRequests.isEmpty()}">
+      <thead><tr><th>#</th><th>Student</th><th>Type</th><th>Current Room</th><th>Requested Room</th><th>Requested</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr th:each="r : ${pendingRoomRequests}">
+          <td th:text="${r.requestId}">1</td>
+          <td th:text="${r.student.name + ' (' + r.student.studentCode + ')'}">Student</td>
+          <td th:text="${r.type}">CHANGE_ROOM</td>
+          <td th:text="'Room ' + ${r.currentRoom.roomId}">Room 101</td>
+          <td th:text="${r.requestedRoom != null ? 'Room ' + r.requestedRoom.roomId : '-'}">Room 102</td>
+          <td th:text="${#temporals.format(r.requestDate, 'dd MMM yyyy, HH:mm')}">Date</td>
+          <td>
+            <div class="actions">
+              <form th:action="@{'/admin/room-requests/' + ${r.requestId} + '/approve'}" method="post">
+                <button type="submit" class="btn-approve">Approve</button>
+              </form>
+              <form th:action="@{'/admin/room-requests/' + ${r.requestId} + '/reject'}" method="post">
+                <button type="submit" class="btn-reject">Reject</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="empty-state" th:if="${pendingRoomRequests == null or pendingRoomRequests.isEmpty()}">No pending room change or vacate requests.</div>
   </div>
 </main>
 

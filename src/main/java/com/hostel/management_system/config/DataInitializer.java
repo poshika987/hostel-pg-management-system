@@ -31,10 +31,12 @@ public class DataInitializer implements CommandLineRunner {
         if (isMySql()) {
             fixAllocationIndexes();
             fixPaymentSchema();
+            fixUserRoleSchema();
         }
         seedUsers();
         seedRooms();
         seedMaintenanceStaff();
+        seedMaintenanceUsers();
         syncRoomDefaults();
         seedRentPolicy();
     }
@@ -98,11 +100,29 @@ public class DataInitializer implements CommandLineRunner {
                   AND column_name = 'status'
                 """, String.class);
 
-        if (paymentStatusType != null && !paymentStatusType.contains("REFUND_REQUESTED")) {
+        if (paymentStatusType != null && !paymentStatusType.contains("PENDING_VERIFICATION")) {
             jdbcTemplate.execute("""
                     ALTER TABLE payments
                     MODIFY COLUMN status
-                    ENUM('SUCCESSFUL','REFUND_REQUESTED','FAILED','REFUNDED') NOT NULL
+                    ENUM('PENDING_VERIFICATION','SUCCESSFUL','REFUND_REQUESTED','FAILED','REFUNDED') NOT NULL
+                    """);
+        }
+    }
+
+    private void fixUserRoleSchema() {
+        String roleType = jdbcTemplate.queryForObject("""
+                SELECT COLUMN_TYPE
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'users'
+                  AND column_name = 'role'
+                """, String.class);
+
+        if (roleType != null && roleType.startsWith("enum") && !roleType.contains("MAINTENANCE")) {
+            jdbcTemplate.execute("""
+                    ALTER TABLE users
+                    MODIFY COLUMN role
+                    ENUM('STUDENT','ADMIN','WARDEN','ACCOUNTANT','MAINTENANCE') NOT NULL
                     """);
         }
     }
@@ -138,6 +158,15 @@ public class DataInitializer implements CommandLineRunner {
             w.setRole(Role.WARDEN);
             userRepository.save(w);
         }
+        if (userRepository.findByEmail("accountant@hostel.com").isEmpty()) {
+            Accountant accountant = new Accountant();
+            accountant.setName("Accountant");
+            accountant.setEmail("accountant@hostel.com");
+            accountant.setPhone("7777777777");
+            accountant.setPassword(passwordEncoder.encode("accountant123"));
+            accountant.setRole(Role.ACCOUNTANT);
+            userRepository.save(accountant);
+        }
     }
 
     private void seedRooms() {
@@ -161,6 +190,32 @@ public class DataInitializer implements CommandLineRunner {
             maintenanceStaffRepository.save(createMaintenanceStaff("Anita Rao", "Plumber", "9000022222"));
             maintenanceStaffRepository.save(createMaintenanceStaff("Kiran Shetty", "General Maintenance", "9000033333"));
         }
+    }
+
+    private void seedMaintenanceUsers() {
+        createMaintenanceLogin("ravi@hostel.com", "maintenance123", "Ravi Kumar");
+        createMaintenanceLogin("anita@hostel.com", "maintenance123", "Anita Rao");
+        createMaintenanceLogin("kiran@hostel.com", "maintenance123", "Kiran Shetty");
+    }
+
+    private void createMaintenanceLogin(String email, String password, String staffName) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            return;
+        }
+
+        maintenanceStaffRepository.findAll().stream()
+                .filter(staff -> staff.getName().equalsIgnoreCase(staffName))
+                .findFirst()
+                .ifPresent(staff -> {
+                    MaintenanceUser user = new MaintenanceUser();
+                    user.setName(staff.getName());
+                    user.setEmail(email);
+                    user.setPhone(staff.getContact());
+                    user.setPassword(passwordEncoder.encode(password));
+                    user.setRole(Role.MAINTENANCE);
+                    user.setStaff(staff);
+                    userRepository.save(user);
+                });
     }
 
     private MaintenanceStaff createMaintenanceStaff(String name, String role, String contact) {

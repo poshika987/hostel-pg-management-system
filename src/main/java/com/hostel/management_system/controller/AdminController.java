@@ -19,7 +19,7 @@ public class AdminController {
     @Autowired private BookingService bookingService;
     @Autowired private AllocationService allocationService;
     @Autowired private RoomService roomService;
-    @Autowired private AccountantPaymentOperations accountantPaymentOperations;
+    @Autowired private RoomActionRequestService roomActionRequestService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -34,6 +34,8 @@ public class AdminController {
     public String viewBookings(Model model) {
         model.addAttribute("pendingBookings", bookingService.getPendingBookings());
         model.addAttribute("allBookings", bookingService.getAllBookings());
+        model.addAttribute("pendingRoomRequests", roomActionRequestService.getPendingRequests());
+        model.addAttribute("allRoomRequests", roomActionRequestService.getAllRequests());
         return "admin-bookings";
     }
 
@@ -44,12 +46,6 @@ public class AdminController {
         return "admin-rooms";
     }
 
-    @GetMapping("/refunds")
-    public String viewRefunds(Model model) {
-        model.addAttribute("refundRequests", accountantPaymentOperations.getPendingRefundRequests());
-        return "admin-refunds";
-    }
-
     @PostMapping("/rooms/{id}/rent")
     public String updateRent(@PathVariable Integer id,
                              @RequestParam double price,
@@ -57,13 +53,6 @@ public class AdminController {
         roomService.updateRoomRent(id, price);
         ra.addFlashAttribute("successMessage", "Monthly rent updated for Room " + id + ".");
         return "redirect:/admin/rooms";
-    }
-
-    @PostMapping("/refunds/{paymentId}/approve")
-    public String approveRefund(@PathVariable Long paymentId, RedirectAttributes ra) {
-        accountantPaymentOperations.approveRefund(paymentId);
-        ra.addFlashAttribute("successMessage", "Refund approved successfully.");
-        return "redirect:/admin/refunds";
     }
 
     @PostMapping("/approve/{id}")
@@ -77,6 +66,20 @@ public class AdminController {
     public String reject(@PathVariable Long id, RedirectAttributes ra) {
         bookingService.rejectBooking(id);
         ra.addFlashAttribute("successMessage", "Booking rejected successfully.");
+        return "redirect:/admin/bookings";
+    }
+
+    @PostMapping("/room-requests/{id}/approve")
+    public String approveRoomRequest(@PathVariable Long id, RedirectAttributes ra) {
+        roomActionRequestService.approve(id);
+        ra.addFlashAttribute("successMessage", "Room request approved successfully.");
+        return "redirect:/admin/bookings";
+    }
+
+    @PostMapping("/room-requests/{id}/reject")
+    public String rejectRoomRequest(@PathVariable Long id, RedirectAttributes ra) {
+        roomActionRequestService.reject(id);
+        ra.addFlashAttribute("successMessage", "Room request rejected successfully.");
         return "redirect:/admin/bookings";
     }
 }

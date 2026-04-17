@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Warden Booking Requests</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}:root{--bg:#10131c;--surface:#181c29;--surface2:#202638;--border:#30364b;--text:#f4f6ff;--muted:#9aa2c2;--accent:#17c3b2;--error:#fe6d73;--success:#43e97b}
+body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Sora',sans-serif}.header{padding:2rem;display:flex;justify-content:space-between;gap:1rem}.btn,a.btn{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:8px;padding:.7rem 1rem;text-decoration:none;font-weight:700;cursor:pointer}.shell{padding:0 2rem 2rem}.alert{margin-bottom:1rem;padding:.85rem 1rem;border-radius:8px}.alert-success{background:rgba(67,233,123,.1);color:var(--success)}.alert-error{background:rgba(254,109,115,.1);color:var(--error)}.section{margin-top:1.25rem}.section h2{font-size:1.1rem;margin-bottom:.75rem}.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:auto}table{width:100%;border-collapse:collapse;min-width:760px}th{color:var(--muted);background:var(--surface2);text-align:left;padding:.85rem;text-transform:uppercase;font-size:.68rem}td{padding:.85rem;border-top:1px solid var(--border);font-size:.84rem}.actions{display:flex;gap:.5rem}.btn-approve{background:rgba(67,233,123,.12);color:var(--success);border:1px solid rgba(67,233,123,.3);border-radius:8px;padding:.45rem .8rem;font-weight:800}.btn-reject{background:rgba(254,109,115,.12);color:var(--error);border:1px solid rgba(254,109,115,.3);border-radius:8px;padding:.45rem .8rem;font-weight:800}.empty{padding:2rem;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<header class="header">
+  <div><h1>Warden Booking Review</h1><p style="color:var(--muted);margin-top:.35rem;">Approve or reject booking, room change, and vacate requests.</p></div>
+  <div><a class="btn" th:href="@{/warden/dashboard}">Dashboard</a></div>
+</header>
+<main class="shell">
+  <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+  <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+  <section class="section">
+    <h2>Pending Room Bookings</h2>
+    <div class="table-wrap">
+      <table th:if="${!pendingBookings.isEmpty()}">
+        <thead><tr><th>#</th><th>Student</th><th>Room</th><th>Requested</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr th:each="b : ${pendingBookings}">
+            <td th:text="${b.bookingId}">1</td>
+            <td th:text="${b.student.name + ' (' + b.student.studentCode + ')'}">Student</td>
+            <td th:text="'Room ' + ${b.room.roomId} + ' | ' + ${b.room.type}">Room</td>
+            <td th:text="${#temporals.format(b.requestDate, 'dd MMM yyyy, HH:mm')}">Date</td>
+            <td><div class="actions"><form th:action="@{'/warden/bookings/approve/' + ${b.bookingId}}" method="post"><button class="btn-approve">Approve</button></form><form th:action="@{'/warden/bookings/reject/' + ${b.bookingId}}" method="post"><button class="btn-reject">Reject</button></form></div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="empty" th:if="${pendingBookings.isEmpty()}">No pending booking requests.</div>
+    </div>
+  </section>
+  <section class="section">
+    <h2>Pending Room Change / Vacate Requests</h2>
+    <div class="table-wrap">
+      <table th:if="${!pendingRoomRequests.isEmpty()}">
+        <thead><tr><th>#</th><th>Student</th><th>Type</th><th>Current Room</th><th>Requested Room</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr th:each="r : ${pendingRoomRequests}">
+            <td th:text="${r.requestId}">1</td>
+            <td th:text="${r.student.name + ' (' + r.student.studentCode + ')'}">Student</td>
+            <td th:text="${r.type}">CHANGE_ROOM</td>
+            <td th:text="'Room ' + ${r.currentRoom.roomId}">Room 101</td>
+            <td th:text="${r.requestedRoom != null ? 'Room ' + r.requestedRoom.roomId : '-'}">Room 102</td>
+            <td><div class="actions"><form th:action="@{'/warden/bookings/room-requests/' + ${r.requestId} + '/approve'}" method="post"><button class="btn-approve">Approve</button></form><form th:action="@{'/warden/bookings/room-requests/' + ${r.requestId} + '/reject'}" method="post"><button class="btn-reject">Reject</button></form></div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="empty" th:if="${pendingRoomRequests.isEmpty()}">No pending room action requests.</div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

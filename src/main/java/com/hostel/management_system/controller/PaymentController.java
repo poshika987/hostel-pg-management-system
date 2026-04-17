@@ -7,10 +7,18 @@ import com.hostel.management_system.service.StudentPaymentOperations;
 import com.hostel.management_system.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 /**
  * MVC – Controller for Rent and Payments module.
@@ -91,9 +99,10 @@ public class PaymentController {
                     expiry,
                     cvv
             );
-            ra.addFlashAttribute("successMessage",
-                    "Payment successful via " + payment.getPaymentChannel()
-                            + ". Ref: " + payment.getReferenceId());
+            String message = payment.getStatus().name().equals("PENDING_VERIFICATION")
+                    ? "Offline payment submitted. Accountant verification is pending. Ref: " + payment.getReferenceId()
+                    : "Payment successful via " + payment.getPaymentChannel() + ". Ref: " + payment.getReferenceId();
+            ra.addFlashAttribute("successMessage", message);
         } catch (Exception e) {
             ra.addFlashAttribute("errorMessage", "Payment failed: " + e.getMessage());
             ra.addFlashAttribute("checkoutInvoiceId", invoiceId);
@@ -104,10 +113,19 @@ public class PaymentController {
 
     // ── View payment history (MINOR USE CASE) ────────────────────────────────
     @GetMapping("/history")
-    public String history(Authentication auth, Model model) {
+    public String history(Authentication auth,
+                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                          Model model) {
         Student student = getStudent(auth);
         model.addAttribute("student", student);
-        model.addAttribute("payments", paymentService.getPaymentHistory(student.getId()));
+        var payments = paymentService.getPaymentHistory(student.getId()).stream()
+                .filter(payment -> startDate == null || payment.getPaymentDate() == null || !payment.getPaymentDate().isBefore(startDate.atStartOfDay()))
+                .filter(payment -> endDate == null || payment.getPaymentDate() == null || !payment.getPaymentDate().isAfter(endDate.atTime(LocalTime.MAX)))
+                .toList();
+        model.addAttribute("payments", payments);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
         return "payment_history";
     }
 
@@ -123,5 +141,31 @@ public class PaymentController {
             ra.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/payments/history";
+    }
+
+    @PostMapping("/dispute/{paymentId}")
+    public String raiseDispute(@PathVariable Long paymentId,
+                               @RequestParam String reason,
+                               Authentication auth,
+                               RedirectAttributes ra) {
+        Student student = getStudent(auth);
+        try {
+            paymentService.raiseDispute(student.getId(), paymentId, reason);
+            ra.addFlashAttribute("successMessage", "Payment dispute submitted for accountant review.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/payments/history";
+    }
+
+    @GetMapping("/receipt/{paymentId}")
+    public ResponseEntity<byte[]> receipt(@PathVariable Long paymentId, Authentication auth) {
+        Student student = getStudent(auth);
+        byte[] receipt = paymentService.generateReceipt(student.getId(), paymentId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_PLAIN)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename("payment-receipt-" + paymentId + ".txt").build().toString())
+                .body(receipt);
     }
 }

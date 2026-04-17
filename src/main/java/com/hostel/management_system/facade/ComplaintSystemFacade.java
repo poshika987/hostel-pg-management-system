@@ -41,6 +41,17 @@ public class ComplaintSystemFacade {
         return complaintService.updateStatus(complaintId, status, note);
     }
 
+    public Complaint updateRepairStatusByMaintenanceStaff(Long complaintId,
+                                                          MaintenanceStaff staff,
+                                                          ComplaintStatus status,
+                                                          String note) {
+        return complaintService.updateStatusByMaintenanceStaff(complaintId, staff, status, note);
+    }
+
+    public List<Complaint> viewAssignedComplaints(MaintenanceStaff staff) {
+        return complaintService.getComplaintsAssignedTo(staff);
+    }
+
     public Complaint reopenComplaint(Student student, Long complaintId, String reason) {
         return complaintService.reopenComplaint(complaintId, student, reason);
     }

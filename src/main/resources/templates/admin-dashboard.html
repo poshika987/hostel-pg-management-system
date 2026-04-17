@@ -116,7 +116,6 @@ body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text
       <span class="nav-badge" th:text="${pendingCount}" th:if="${pendingCount > 0}">0</span>
     </a>
     <a href="/admin/rooms" class="nav-link"><span>🚪</span> &nbsp;Room Management</a>
-    <a href="/admin/refunds" class="nav-link"><span>💸</span> &nbsp;Refund Requests</a>
     <a href="/admin/staff" class="nav-link"><span>ST</span> &nbsp;Staff Records</a>
     <a href="/reports" class="nav-link"><span>RP</span> &nbsp;Reports</a>
   </div>
@@ -191,13 +190,6 @@ body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text
       <div class="ql-text">
         <h3>Room Overview</h3>
         <p>View all rooms and current allocations</p>
-      </div>
-    </a>
-    <a href="/admin/refunds" class="quick-link-card">
-      <div class="ql-icon ql-green">💸</div>
-      <div class="ql-text">
-        <h3>Refund Requests</h3>
-        <p>Approve student refund requests</p>
       </div>
     </a>
     <a href="/admin/staff" class="quick-link-card">

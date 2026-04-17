@@ -116,6 +116,7 @@ tbody tr:hover { background: var(--surface2); }
     <a href="/student/dashboard" class="nav-link active"><span>⊞</span> Dashboard</a>
     <a href="/student/rooms" class="nav-link"><span>🚪</span> Browse Rooms</a>
     <a href="/student/complaints" class="nav-link"><span>!</span> Complaints</a>
+    <a href="/student/change-room" class="nav-link"><span>Change</span> Change Room</a>
     <a href="/student/reviews" class="nav-link"><span>★</span> Give Review</a>
     <div class="nav-section">Payments</div>
     <a href="/payments/invoice" class="nav-link"><span>🧾</span> My Invoices</a>
@@ -198,6 +199,7 @@ tbody tr:hover { background: var(--surface2); }
     <form th:action="@{/student/vacate}" method="post" onsubmit="return confirm('Are you sure you want to vacate?');">
       <button type="submit" class="btn-danger">⬛ Request Vacate</button>
     </form>
+    <a href="/student/change-room" class="btn-accent" style="margin-top:1rem;">Request Room Change</a>
   </div>
 
   <!-- Rent payment quick-access strip (shown when allocated) -->
@@ -251,6 +253,23 @@ tbody tr:hover { background: var(--surface2); }
       <span class="empty-state-icon">📋</span>
       No booking history yet. <a href="/student/rooms" style="color:var(--accent);">Browse rooms</a> to make your first request.
     </div>
+  </div>
+  <div class="section-title" style="margin-top:2rem;">Room Change / Vacate Requests</div>
+  <div class="table-wrap">
+    <table th:if="${roomActionRequests != null and !roomActionRequests.isEmpty()}">
+      <thead><tr><th>#</th><th>Type</th><th>Current Room</th><th>Requested Room</th><th>Status</th><th>Requested On</th></tr></thead>
+      <tbody>
+        <tr th:each="r : ${roomActionRequests}">
+          <td th:text="${r.requestId}">1</td>
+          <td th:text="${r.type}">CHANGE_ROOM</td>
+          <td th:text="'Room ' + ${r.currentRoom.roomId}">Room 101</td>
+          <td th:text="${r.requestedRoom != null ? 'Room ' + r.requestedRoom.roomId : '-'}">Room 102</td>
+          <td><span th:class="'badge badge-' + ${r.status.name().toLowerCase()}" th:text="${r.status}">PENDING</span></td>
+          <td th:text="${#temporals.format(r.requestDate, 'dd MMM yyyy, HH:mm')}">Date</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="empty-state" th:if="${roomActionRequests == null or roomActionRequests.isEmpty()}">No room change or vacate requests yet.</div>
   </div>
 </main>
 </body>

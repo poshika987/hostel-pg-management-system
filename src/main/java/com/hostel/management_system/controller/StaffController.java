@@ -1,6 +1,7 @@
 package com.hostel.management_system.controller;
 
 import com.hostel.management_system.facade.ComplaintSystemFacade;
+import com.hostel.management_system.service.AccountantPaymentOperations;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,9 +10,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class StaffController {
 
     private final ComplaintSystemFacade complaintSystemFacade;
+    private final AccountantPaymentOperations accountantPaymentOperations;
 
-    public StaffController(ComplaintSystemFacade complaintSystemFacade) {
+    public StaffController(ComplaintSystemFacade complaintSystemFacade,
+                           AccountantPaymentOperations accountantPaymentOperations) {
         this.complaintSystemFacade = complaintSystemFacade;
+        this.accountantPaymentOperations = accountantPaymentOperations;
     }
 
     @GetMapping("/warden/dashboard")
@@ -22,7 +26,10 @@ public class StaffController {
     }
 
     @GetMapping("/accountant/dashboard")
-    public String accountantDashboard() {
+    public String accountantDashboard(Model model) {
+        model.addAttribute("offlinePayments", accountantPaymentOperations.getPendingOfflinePayments());
+        model.addAttribute("refundRequests", accountantPaymentOperations.getPendingRefundRequests());
+        model.addAttribute("disputes", accountantPaymentOperations.getOpenDisputes());
         return "accountant-dashboard";
     }
 }

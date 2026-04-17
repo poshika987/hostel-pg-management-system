@@ -11,4 +11,5 @@ import java.util.List;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findAllByStudentIdOrderByPaymentDateDesc(Long studentId);
     List<Payment> findAllByStatusOrderByPaymentDateDesc(PaymentStatus status);
+    List<Payment> findAllByStatusAndPaymentModeOrderByPaymentDateDesc(PaymentStatus status, String paymentMode);
 }

@@ -3,23 +3,19 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Accountant Dashboard</title>
+<title>Accountant Payments</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 :root { --bg:#0d1117; --surface:#151b23; --surface2:#1f2733; --border:#303846; --text:#edf2f7; --muted:#94a3b8; --accent:#2dd4bf; --danger:#fb7185; --ok:#86efac; --warn:#f59e0b; }
 body { min-height:100vh; background:var(--bg); color:var(--text); font-family:'Sora', sans-serif; }
 .header { padding:2rem; display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; border-bottom:1px solid var(--border); background:var(--surface); }
-h1 { font-size:1.65rem; }
+h1 { font-size:1.6rem; }
 p { color:var(--muted); margin-top:.35rem; font-size:.9rem; line-height:1.55; }
-.actions { display:flex; gap:.65rem; flex-wrap:wrap; }
+.actions { display:flex; flex-wrap:wrap; gap:.65rem; }
 .btn, a.btn { border:1px solid var(--border); background:var(--surface2); color:var(--text); text-decoration:none; border-radius:8px; padding:.7rem 1rem; font-weight:700; font-family:'Sora', sans-serif; cursor:pointer; }
 .btn-primary { background:var(--accent); color:#042f2e; border-color:var(--accent); }
 .shell { padding:2rem; display:grid; gap:1.25rem; }
-.stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:1rem; }
-.stat { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1rem; }
-.stat span { display:block; color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; font-weight:800; }
-.stat strong { display:block; margin-top:.35rem; font-size:1.8rem; color:var(--accent); }
 .alert { padding:.85rem 1rem; border-radius:8px; }
 .alert-success { color:var(--ok); border:1px solid rgba(134,239,172,.35); background:rgba(134,239,172,.1); }
 .alert-error { color:var(--danger); border:1px solid rgba(251,113,133,.35); background:rgba(251,113,133,.1); }
@@ -37,25 +33,18 @@ td { padding:.85rem; border-top:1px solid var(--border); vertical-align:top; fon
 <body>
 <header class="header">
   <div>
-    <h1>Accountant Dashboard</h1>
-    <p>Verify offline payments, approve refund requests, resolve disputes, and export financial reports.</p>
+    <h1>Accountant Payment Desk</h1>
+    <p>Verify offline rent payments and approve refund requests.</p>
   </div>
   <div class="actions">
-    <a class="btn" th:href="@{/accountant/payments}">Payment Desk</a>
-    <a class="btn" th:href="@{/reports(type='payment')}">Payment Reports</a>
+    <a class="btn" th:href="@{/accountant/dashboard}">Dashboard</a>
+    <a class="btn" th:href="@{/reports(type='payment')}">Reports</a>
     <form th:action="@{/logout}" method="post"><button class="btn btn-primary" type="submit">Sign Out</button></form>
   </div>
 </header>
-
 <main class="shell">
   <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
   <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
-
-  <section class="stats">
-    <div class="stat"><span>Offline Verification</span><strong th:text="${offlinePayments.size()}">0</strong></div>
-    <div class="stat"><span>Refund Requests</span><strong th:text="${refundRequests.size()}">0</strong></div>
-    <div class="stat"><span>Open Disputes</span><strong th:text="${disputes.size()}">0</strong></div>
-  </section>
 
   <section>
     <div class="section-title">Offline Payments Pending Verification</div>
@@ -112,29 +101,29 @@ td { padding:.85rem; border-top:1px solid var(--border); vertical-align:top; fon
       <div style="margin-top:.75rem;"><button class="btn-approve" type="button" disabled>Approve Refund</button></div>
     </div>
   </section>
-
   <section>
     <div class="section-title">Open Payment Disputes</div>
-    <div class="table-wrap" th:if="${!disputes.isEmpty()}">
+    <div class="table-wrap" th:if="${disputes != null and !disputes.isEmpty()}">
       <table>
-        <thead><tr><th>Dispute</th><th>Payment</th><th>Student</th><th>Reason</th><th>Resolve</th></tr></thead>
+        <thead><tr><th>Dispute</th><th>Payment</th><th>Student</th><th>Reason</th><th>Raised</th><th>Resolve</th></tr></thead>
         <tbody>
           <tr th:each="dispute : ${disputes}">
             <td th:text="'DSP-' + ${dispute.disputeId}">DSP-1</td>
             <td th:text="'PMT-' + ${dispute.payment.paymentId}">PMT-1</td>
             <td th:text="${dispute.student.name + ' (' + dispute.student.studentCode + ')'}">Student</td>
             <td th:text="${dispute.reason}">Reason</td>
+            <td th:text="${#temporals.format(dispute.createdAt, 'dd MMM yyyy, HH:mm')}">Date</td>
             <td>
               <form th:action="@{'/accountant/payments/disputes/' + ${dispute.disputeId} + '/resolve'}" method="post" style="display:grid;gap:.4rem;">
                 <input name="resolutionNote" placeholder="Resolution note" style="background:#0f141b;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.55rem;"/>
-                <button class="btn-approve" type="submit">Resolve Dispute</button>
+                <button class="btn-approve" type="submit">Resolve</button>
               </form>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-    <div class="table-wrap empty" th:if="${disputes.isEmpty()}">No open payment disputes.</div>
+    <div class="table-wrap empty" th:if="${disputes == null or disputes.isEmpty()}">No open payment disputes.</div>
   </section>
 </main>
 </body>

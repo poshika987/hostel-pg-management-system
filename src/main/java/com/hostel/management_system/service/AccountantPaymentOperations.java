@@ -1,6 +1,7 @@
 package com.hostel.management_system.service;
 
 import com.hostel.management_system.model.Payment;
+import com.hostel.management_system.model.PaymentDispute;
 
 import java.util.List;
 
@@ -9,5 +10,9 @@ import java.util.List;
  */
 public interface AccountantPaymentOperations {
     Payment approveRefund(Long paymentId);
+    Payment verifyOfflinePayment(Long paymentId);
+    List<Payment> getPendingOfflinePayments();
     List<Payment> getPendingRefundRequests();
+    List<PaymentDispute> getOpenDisputes();
+    PaymentDispute resolveDispute(Long disputeId, String resolutionNote);
 }

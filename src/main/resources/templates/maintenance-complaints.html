@@ -1,44 +1,43 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Complaint Management - Warden</title>
+<title>Maintenance Complaints</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 :root { --bg:#10131c; --surface:#181c29; --surface2:#202638; --border:#30364b; --text:#f4f6ff; --muted:#9aa2c2; --accent:#17c3b2; --accent2:#ffcb77; --error:#fe6d73; --success:#43e97b; --info:#65d6ff; }
-body { min-height:100vh; background: radial-gradient(circle at top left, rgba(23,195,178,.2), transparent 34%), var(--bg); color:var(--text); font-family:'Sora', sans-serif; }
+body { min-height:100vh; background:var(--bg); color:var(--text); font-family:'Sora', sans-serif; }
 .header { padding:2rem; display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; }
-h1 { font-size:1.7rem; letter-spacing:-.03em; }
+h1 { font-size:1.7rem; }
 p { color:var(--muted); margin-top:.35rem; font-size:.9rem; line-height:1.5; }
 .actions { display:flex; gap:.75rem; flex-wrap:wrap; }
-a.btn, .btn { border:1px solid var(--border); background:var(--surface2); color:var(--text); border-radius:10px; padding:.7rem 1rem; text-decoration:none; font-weight:700; font-family:'Sora', sans-serif; cursor:pointer; }
-a.btn-accent, .btn-accent { background:linear-gradient(135deg, var(--accent), #21e6d3); border:none; color:#06211f; }
+a.btn, .btn { border:1px solid var(--border); background:var(--surface2); color:var(--text); border-radius:8px; padding:.7rem 1rem; text-decoration:none; font-weight:700; font-family:'Sora', sans-serif; cursor:pointer; }
+.btn-accent { background:var(--accent); border-color:var(--accent); color:#06211f; }
 .shell { padding:0 2rem 2rem; }
 .stats { display:grid; grid-template-columns:repeat(3, minmax(180px,1fr)); gap:1rem; margin-bottom:1rem; }
-.stat { background:rgba(24,28,41,.88); border:1px solid var(--border); border-radius:18px; padding:1.1rem; }
+.stat { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1rem; }
 .stat label { display:block; color:var(--muted); text-transform:uppercase; font-size:.68rem; letter-spacing:.08em; font-weight:800; }
 .stat strong { display:block; font-size:1.8rem; margin-top:.25rem; }
-.card { background:rgba(24,28,41,.92); border:1px solid var(--border); border-radius:20px; overflow:hidden; box-shadow:0 24px 50px rgba(0,0,0,.22); }
-.alert { margin-bottom:1rem; padding:.85rem 1rem; border-radius:12px; font-size:.875rem; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.alert { margin-bottom:1rem; padding:.85rem 1rem; border-radius:8px; font-size:.875rem; }
 .alert-success { background:rgba(67,233,123,.1); border:1px solid rgba(67,233,123,.3); color:var(--success); }
 .alert-error { background:rgba(254,109,115,.1); border:1px solid rgba(254,109,115,.3); color:var(--error); }
 table { width:100%; border-collapse:collapse; }
 th { text-align:left; color:var(--muted); background:var(--surface2); padding:.85rem; text-transform:uppercase; font-size:.68rem; letter-spacing:.08em; }
 td { padding:.9rem .85rem; border-top:1px solid var(--border); vertical-align:top; font-size:.82rem; }
 .meta { color:var(--muted); font-size:.74rem; line-height:1.55; margin-top:.25rem; }
-.badge { display:inline-flex; border-radius:999px; padding:.25rem .6rem; font-size:.68rem; font-weight:800; text-transform:uppercase; border:1px solid transparent; }
-.badge-pending { color:var(--accent2); background:rgba(255,203,119,.12); border-color:rgba(255,203,119,.35); }
-.badge-assigned, .badge-in_progress { color:var(--info); background:rgba(101,214,255,.12); border-color:rgba(101,214,255,.3); }
-.badge-resolved, .badge-closed { color:var(--success); background:rgba(67,233,123,.12); border-color:rgba(67,233,123,.3); }
-.badge-reopened { color:var(--error); background:rgba(254,109,115,.12); border-color:rgba(254,109,115,.3); }
+.badge { display:inline-flex; border-radius:999px; padding:.25rem .6rem; font-size:.68rem; font-weight:800; text-transform:uppercase; }
+.badge-pending { color:var(--accent2); background:rgba(255,203,119,.12); }
+.badge-assigned, .badge-in_progress { color:var(--info); background:rgba(101,214,255,.12); }
+.badge-closed { color:var(--success); background:rgba(67,233,123,.12); }
+.badge-reopened { color:var(--error); background:rgba(254,109,115,.12); }
 .form-row { display:grid; grid-template-columns:1fr auto; gap:.45rem; margin-bottom:.55rem; }
-select, input { width:100%; border:1px solid var(--border); background:#111521; color:var(--text); border-radius:9px; padding:.55rem .65rem; font-family:'Sora', sans-serif; }
-.btn-sm { padding:.55rem .75rem; border-radius:9px; border:none; background:var(--accent); color:#06211f; font-weight:800; cursor:pointer; }
+select, input { width:100%; border:1px solid var(--border); background:#111521; color:var(--text); border-radius:8px; padding:.55rem .65rem; font-family:'Sora', sans-serif; }
+.btn-sm { padding:.55rem .75rem; border-radius:8px; border:none; background:var(--accent); color:#06211f; font-weight:800; cursor:pointer; }
 .timeline { display:grid; gap:.35rem; max-width:340px; }
 .timeline-item { border-left:2px solid var(--accent); padding-left:.55rem; color:var(--muted); font-size:.72rem; }
-.photo-link { display:inline-block; color:var(--accent); text-decoration:none; margin-top:.3rem; font-size:.75rem; font-weight:700; }
 .empty { padding:2rem; color:var(--muted); text-align:center; }
 @media (max-width:900px) { .header { display:block; padding:1rem; } .shell { padding:0 1rem 1rem; } .stats { grid-template-columns:1fr; } .card { overflow-x:auto; } .form-row { grid-template-columns:1fr; } }
 </style>
@@ -46,11 +45,10 @@ select, input { width:100%; border:1px solid var(--border); background:#111521; 
 <body>
 <header class="header">
   <div>
-    <h1>Warden Complaint Control</h1>
-    <p>Assign complaints to maintenance staff. Repair progress is updated by the assigned staff member.</p>
+    <h1>Maintenance Work Queue</h1>
+    <p th:text="${staff.name + ' | ' + staff.role}">Assigned complaint repairs.</p>
   </div>
   <div class="actions">
-    <a class="btn" th:href="@{/warden/dashboard}">Dashboard</a>
     <a class="btn" th:href="@{/reports(type='complaint')}">Reports</a>
     <form th:action="@{/logout}" method="post"><button class="btn btn-accent" type="submit">Sign Out</button></form>
   </div>
@@ -60,14 +58,14 @@ select, input { width:100%; border:1px solid var(--border); background:#111521; 
   <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
 
   <section class="stats">
-    <div class="stat"><label>Open Complaints</label><strong th:text="${openComplaintCount}">0</strong></div>
-    <div class="stat"><label>Maintenance Staff</label><strong th:text="${staffMembers.size()}">0</strong></div>
-    <div class="stat"><label>Total Records</label><strong th:text="${complaints.size()}">0</strong></div>
+    <div class="stat"><label>Assigned Complaints</label><strong th:text="${complaints.size()}">0</strong></div>
+    <div class="stat"><label>Open Work</label><strong th:text="${openComplaintCount}">0</strong></div>
+    <div class="stat"><label>Staff ID</label><strong th:text="${staff.staffId}">0</strong></div>
   </section>
 
   <section class="card">
     <table th:if="${!complaints.isEmpty()}">
-      <thead><tr><th>ID</th><th>Student Issue</th><th>Status</th><th>Assignment</th><th>Timeline</th></tr></thead>
+      <thead><tr><th>ID</th><th>Student Issue</th><th>Status</th><th>Update Progress</th><th>Timeline</th></tr></thead>
       <tbody>
         <tr th:each="c : ${complaints}">
           <td th:text="${c.complaintId}">1</td>
@@ -76,24 +74,23 @@ select, input { width:100%; border:1px solid var(--border); background:#111521; 
             <div class="meta" th:text="${c.student.name + ' | ' + c.category + ' | ' + c.priority}">Student</div>
             <div class="meta" th:text="${c.room != null ? 'Room ' + c.room.roomId : 'No room linked'}">Room</div>
             <div class="meta" th:text="${c.description}">Description</div>
-            <a class="photo-link" th:each="photo : ${c.photos}" th:href="${photo.filePath}" th:text="${photo.originalFilename}" target="_blank">photo</a>
           </td>
-          <td><span th:class="'badge badge-' + ${c.status.name().toLowerCase()}" th:text="${c.status}">PENDING</span></td>
+          <td><span th:class="'badge badge-' + ${c.status.name().toLowerCase()}" th:text="${c.status}">ASSIGNED</span></td>
           <td>
-            <div class="meta" th:if="${c.assignedStaff != null}" th:text="${'Assigned: ' + c.assignedStaff.name + ' (' + c.assignedStaff.role + ')'}">Assigned</div>
-            <form th:action="@{'/warden/complaints/' + ${c.complaintId} + '/assign'}" method="post">
+            <form th:action="@{'/maintenance/complaints/' + ${c.complaintId} + '/status'}" method="post">
               <div class="form-row">
-                <select name="staffId" required>
-                  <option th:each="s : ${staffMembers}" th:value="${s.staffId}" th:text="${s.name + ' - ' + s.role}">Staff</option>
+                <select name="status" required>
+                  <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}">IN_PROGRESS</option>
                 </select>
-                <button class="btn-sm" type="submit">Assign</button>
+                <button class="btn-sm" type="submit">Update</button>
               </div>
+              <input name="note" placeholder="Optional update note"/>
             </form>
           </td>
           <td>
             <div class="timeline">
               <div class="timeline-item" th:each="t : ${c.timeline}">
-                <strong th:text="${t.status}">PENDING</strong>
+                <strong th:text="${t.status}">ASSIGNED</strong>
                 <div th:text="${t.note}">Note</div>
                 <div th:text="${#temporals.format(t.updatedAt, 'dd MMM yyyy, HH:mm')}">Date</div>
               </div>
@@ -102,7 +99,7 @@ select, input { width:100%; border:1px solid var(--border); background:#111521; 
         </tr>
       </tbody>
     </table>
-    <div class="empty" th:if="${complaints.isEmpty()}">No complaints have been raised yet.</div>
+    <div class="empty" th:if="${complaints.isEmpty()}">No complaints are assigned to you yet.</div>
   </section>
 </main>
 </body>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Change Room</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}:root{--bg:#0d1117;--surface:#151b23;--surface2:#1f2733;--border:#303846;--text:#edf2f7;--muted:#94a3b8;--accent:#2dd4bf;--danger:#fb7185;--ok:#86efac}
+body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Sora',sans-serif}.header{padding:2rem;display:flex;justify-content:space-between;gap:1rem;border-bottom:1px solid var(--border);background:var(--surface)}h1{font-size:1.6rem}p{color:var(--muted);margin-top:.35rem;font-size:.9rem}.btn,a.btn{border:1px solid var(--border);background:var(--surface2);color:var(--text);text-decoration:none;border-radius:8px;padding:.7rem 1rem;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer}.btn-primary{background:var(--accent);color:#042f2e;border-color:var(--accent)}.shell{padding:2rem}.alert{padding:.85rem 1rem;border-radius:8px;margin-bottom:1rem}.alert-success{color:var(--ok);border:1px solid rgba(134,239,172,.35);background:rgba(134,239,172,.1)}.alert-error{color:var(--danger);border:1px solid rgba(251,113,133,.35);background:rgba(251,113,133,.1)}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem}.meta{color:var(--muted);font-size:.82rem;margin-top:.25rem}.empty{padding:2rem;text-align:center;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:8px}
+</style>
+</head>
+<body>
+<header class="header">
+  <div><h1>Request Room Change</h1><p th:text="${allocation != null ? 'Current room: Room ' + allocation.room.roomId : 'You need an active allocation first.'}">Current room</p></div>
+  <div><a class="btn" th:href="@{/student/dashboard}">Dashboard</a></div>
+</header>
+<main class="shell">
+  <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+  <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+  <div class="grid" th:if="${allocation != null and !rooms.isEmpty()}">
+    <div class="card" th:each="room : ${rooms}" th:if="${room.roomId != allocation.room.roomId}">
+      <h3 th:text="'Room ' + ${room.roomId}">Room</h3>
+      <div class="meta" th:text="${room.type + ' | ' + room.occupiedCount + '/' + room.capacity}">Type</div>
+      <div class="meta" th:text="'₹' + ${room.price} + '/mo'">Rent</div>
+      <form th:action="@{/student/change-room}" method="post" style="margin-top:1rem;">
+        <input type="hidden" name="roomId" th:value="${room.roomId}"/>
+        <button class="btn btn-primary" type="submit">Request This Room</button>
+      </form>
+    </div>
+  </div>
+  <div class="empty" th:if="${allocation == null or rooms.isEmpty()}">No alternative rooms are available right now.</div>
+</main>
+</body>
+</html>

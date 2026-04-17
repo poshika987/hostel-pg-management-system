@@ -60,6 +60,7 @@ tbody tr:hover { background: var(--surface2); }
   font-size: .7rem; font-weight: 700; text-transform: uppercase; }
 .badge-successful { background: rgba(67,233,123,.15); color: var(--success); border: 1px solid rgba(67,233,123,.3); }
 .badge-refund_requested { background: rgba(124,106,247,.15); color: var(--accent); border: 1px solid rgba(124,106,247,.3); }
+.badge-pending_verification { background: rgba(255,169,77,.15); color: var(--warning); border: 1px solid rgba(255,169,77,.3); }
 .badge-failed     { background: rgba(255,92,122,.15); color: var(--error);   border: 1px solid rgba(255,92,122,.3); }
 .badge-refunded   { background: rgba(255,169,77,.15); color: var(--warning); border: 1px solid rgba(255,169,77,.3); }
 .btn-refund {
@@ -106,6 +107,17 @@ tbody tr:hover { background: var(--surface2); }
   <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
   <div class="alert alert-error"   th:if="${errorMessage}"   th:text="${errorMessage}"></div>
 
+  <form th:action="@{/payments/history}" method="get" style="display:flex;gap:.75rem;align-items:end;flex-wrap:wrap;margin-bottom:1rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem;">
+    <label style="display:grid;gap:.35rem;color:var(--muted);font-size:.75rem;">Start Date
+      <input type="date" name="startDate" th:value="${startDate}" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.55rem;"/>
+    </label>
+    <label style="display:grid;gap:.35rem;color:var(--muted);font-size:.75rem;">End Date
+      <input type="date" name="endDate" th:value="${endDate}" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.55rem;"/>
+    </label>
+    <button class="btn-refund" type="submit">Filter</button>
+    <a href="/payments/history" style="color:var(--accent);text-decoration:none;font-size:.85rem;">Clear</a>
+  </form>
+
   <div class="table-wrap" th:if="${!payments.isEmpty()}">
     <table>
       <thead>
@@ -136,6 +148,11 @@ tbody tr:hover { background: var(--surface2); }
                   th:action="@{'/payments/refund/' + ${p.paymentId}}" method="post"
                   onsubmit="return confirm('Request a refund for this payment?');">
               <button type="submit" class="btn-refund">Request Refund</button>
+            </form>
+            <a th:if="${p.status.name() == 'SUCCESSFUL'}" th:href="@{'/payments/receipt/' + ${p.paymentId}}" class="btn-refund" style="display:inline-block;text-decoration:none;margin-top:.35rem;">Receipt</a>
+            <form th:action="@{'/payments/dispute/' + ${p.paymentId}}" method="post" style="display:grid;gap:.35rem;margin-top:.35rem;">
+              <input name="reason" maxlength="200" placeholder="Dispute reason" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:.45rem;"/>
+              <button type="submit" class="btn-refund">Raise Dispute</button>
             </form>
             <span th:if="${p.status.name() != 'SUCCESSFUL'}" style="color:var(--muted);font-size:.8rem;">—</span>
           </td>

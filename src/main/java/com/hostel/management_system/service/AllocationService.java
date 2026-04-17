@@ -63,6 +63,12 @@ public class AllocationService {
         allocationRepository.save(allocation);
     }
 
+    @Transactional
+    public void changeRoom(Student student, Room newRoom) {
+        vacateRoom(student);
+        allocateRoom(student, newRoom);
+    }
+
     public Optional<Allocation> getActiveAllocation(Student student) {
         return allocationRepository.findByStudentAndStatus(student, AllocationStatus.ACTIVE);
     }

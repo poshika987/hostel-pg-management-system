@@ -18,6 +18,7 @@ public class StudentController {
     @Autowired private AllocationService allocationService;
     @Autowired private UserService userService;
     @Autowired private RentService rentService;
+    @Autowired private RoomActionRequestService roomActionRequestService;
 
     private Student getStudent(Authentication auth) {
         User user = userService.findByEmail(auth.getName());
@@ -34,6 +35,7 @@ public class StudentController {
 
         model.addAttribute("student", student);
         model.addAttribute("bookings", bookings);
+        model.addAttribute("roomActionRequests", roomActionRequestService.getRequestsFor(student));
         model.addAttribute("pendingCount", pendingCount);
         model.addAttribute("monthlyRent", rentService.calculateRent(student));
 
@@ -81,8 +83,33 @@ public class StudentController {
     @PostMapping("/vacate")
     public String vacate(Authentication auth, RedirectAttributes ra) {
         Student student = getStudent(auth);
-        allocationService.vacateRoom(student);
-        ra.addFlashAttribute("successMessage", "You have successfully vacated your room.");
+        roomActionRequestService.requestVacate(student);
+        ra.addFlashAttribute("successMessage", "Vacate request submitted for Admin/Warden approval.");
         return "redirect:/student/dashboard";
+    }
+
+    @GetMapping("/change-room")
+    public String changeRoom(Authentication auth, Model model) {
+        Student student = getStudent(auth);
+        model.addAttribute("student", student);
+        model.addAttribute("rooms", roomService.getAvailableRooms());
+        model.addAttribute("roomActionRequests", roomActionRequestService.getRequestsFor(student));
+        allocationService.getActiveAllocation(student)
+                .ifPresent(a -> model.addAttribute("allocation", a));
+        return "student-change-room";
+    }
+
+    @PostMapping("/change-room")
+    public String requestChangeRoom(@RequestParam Integer roomId,
+                                    Authentication auth,
+                                    RedirectAttributes ra) {
+        Student student = getStudent(auth);
+        try {
+            roomActionRequestService.requestRoomChange(student, roomId);
+            ra.addFlashAttribute("successMessage", "Room change request submitted for Admin/Warden approval.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/student/change-room";
     }
 }

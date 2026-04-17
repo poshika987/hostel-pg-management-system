@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     List<Complaint> findByStudentOrderByCreatedAtDesc(Student student);
+    List<Complaint> findByAssignedStaffOrderByCreatedAtDesc(MaintenanceStaff assignedStaff);
     List<Complaint> findAllByOrderByCreatedAtDesc();
     long countByStatus(ComplaintStatus status);
     long countByAssignedStaffAndStatusNot(MaintenanceStaff assignedStaff, ComplaintStatus status);

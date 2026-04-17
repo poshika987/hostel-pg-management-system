@@ -87,6 +87,21 @@ public class ComplaintService {
     }
 
     @Transactional
+    public Complaint updateStatusByMaintenanceStaff(Long complaintId,
+                                                    MaintenanceStaff staff,
+                                                    ComplaintStatus status,
+                                                    String note) {
+        Complaint complaint = getComplaint(complaintId);
+        if (complaint.getAssignedStaff() == null || !complaint.getAssignedStaff().getStaffId().equals(staff.getStaffId())) {
+            throw new IllegalStateException("You can update only complaints assigned to you.");
+        }
+        if (status == ComplaintStatus.PENDING || status == ComplaintStatus.REOPENED) {
+            throw new IllegalStateException("Maintenance staff can mark assigned work as in progress or closed.");
+        }
+        return updateStatus(complaintId, status, note);
+    }
+
+    @Transactional
     public Complaint reopenComplaint(Long complaintId, Student student, String reason) {
         Complaint complaint = getComplaint(complaintId);
         if (!complaint.getStudent().getId().equals(student.getId())) {
@@ -118,6 +133,10 @@ public class ComplaintService {
 
     public List<Complaint> getAllComplaints() {
         return complaintRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    public List<Complaint> getComplaintsAssignedTo(MaintenanceStaff staff) {
+        return complaintRepository.findByAssignedStaffOrderByCreatedAtDesc(staff);
     }
 
     public List<MaintenanceStaff> getMaintenanceStaff() {

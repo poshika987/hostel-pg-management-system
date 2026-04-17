@@ -20,7 +20,7 @@ body {
   background-image: radial-gradient(ellipse at 20% 50%, rgba(124,106,247,.08) 0%, transparent 60%),
                     radial-gradient(ellipse at 80% 20%, rgba(255,92,122,.05) 0%, transparent 50%);
 }
-.wrap { width: 100%; max-width: 420px; padding: 1.5rem; }
+.wrap { width: 100%; max-width: 560px; padding: 1.5rem; }
 .brand { text-align: center; margin-bottom: 2.5rem; }
 .brand-icon {
   display: inline-flex; align-items: center; justify-content: center;
@@ -80,6 +80,10 @@ input::placeholder { color: var(--muted); }
   padding: .75rem 1rem; font-size: .78rem; color: var(--muted); line-height: 1.7;
 }
 .demo-creds strong { color: var(--text); }
+.cred-grid { display: grid; gap: .45rem; }
+.cred-row { display: grid; grid-template-columns: 120px 1fr; gap: .75rem; align-items: start; }
+.cred-row code { color: var(--text); font-family: 'Sora', sans-serif; }
+@media (max-width: 520px) { .cred-row { grid-template-columns: 1fr; gap: .1rem; } }
 </style>
 </head>
 <body>
@@ -113,9 +117,15 @@ input::placeholder { color: var(--muted); }
 
     <div class="divider">demo credentials</div>
     <div class="demo-creds">
-      <strong>Admin:</strong> admin@hostel.com / admin123<br/>
-      <strong>Warden:</strong> warden@hostel.com / warden123<br/>
-      <strong>Student:</strong> register below
+      <div class="cred-grid">
+        <div class="cred-row"><strong>Admin</strong><code>admin@hostel.com / admin123</code></div>
+        <div class="cred-row"><strong>Warden</strong><code>warden@hostel.com / warden123</code></div>
+        <div class="cred-row"><strong>Accountant</strong><code>accountant@hostel.com / accountant123</code></div>
+        <div class="cred-row"><strong>Maintenance</strong><code>ravi@hostel.com / maintenance123</code></div>
+        <div class="cred-row"><strong></strong><code>anita@hostel.com / maintenance123</code></div>
+        <div class="cred-row"><strong></strong><code>kiran@hostel.com / maintenance123</code></div>
+        <div class="cred-row"><strong>Student</strong><code>register below</code></div>
+      </div>
     </div>
   </div>
 

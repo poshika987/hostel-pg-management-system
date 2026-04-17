@@ -2,6 +2,7 @@ package com.hostel.management_system.service;
 
 import com.hostel.management_system.model.Invoice;
 import com.hostel.management_system.model.Payment;
+import com.hostel.management_system.model.PaymentDispute;
 
 import java.util.List;
 
@@ -24,4 +25,6 @@ public interface StudentPaymentOperations {
     List<Payment> getPaymentHistory(Long studentId);
     List<Invoice> getInvoices(Long studentId);
     Payment requestRefund(Long studentId, Long paymentId);
+    PaymentDispute raiseDispute(Long studentId, Long paymentId, String reason);
+    byte[] generateReceipt(Long studentId, Long paymentId);
 }

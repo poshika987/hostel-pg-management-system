@@ -3,6 +3,7 @@ package com.hostel.management_system.service;
 import com.hostel.management_system.exception.ResourceNotFoundException;
 import com.hostel.management_system.model.*;
 import com.hostel.management_system.repository.InvoiceRepository;
+import com.hostel.management_system.repository.PaymentDisputeRepository;
 import com.hostel.management_system.repository.PaymentRepository;
 import com.hostel.management_system.service.strategy.OfflinePaymentStrategy;
 import com.hostel.management_system.service.strategy.OnlinePaymentStrategy;
@@ -25,6 +26,7 @@ public class PaymentService implements StudentPaymentOperations, AccountantPayme
 
     @Autowired private InvoiceRepository invoiceRepo;
     @Autowired private PaymentRepository paymentRepo;
+    @Autowired private PaymentDisputeRepository disputeRepo;
     @Autowired private RentService rentService;
     @Autowired private OnlinePaymentStrategy onlineStrategy;
     @Autowired private OfflinePaymentStrategy offlineStrategy;
@@ -80,7 +82,8 @@ public class PaymentService implements StudentPaymentOperations, AccountantPayme
 
         // BEHAVIORAL PATTERN – Strategy: select at runtime
         validatePaymentInput(mode, paymentChannel, payerName, upiId, cardNumber, expiry, cvv);
-        PaymentStrategy strategy = "ONLINE".equalsIgnoreCase(mode) ? onlineStrategy : offlineStrategy;
+        boolean offline = "OFFLINE".equalsIgnoreCase(mode);
+        PaymentStrategy strategy = offline ? offlineStrategy : onlineStrategy;
         boolean success = strategy.pay(amount);
 
         // Record payment
@@ -92,11 +95,11 @@ public class PaymentService implements StudentPaymentOperations, AccountantPayme
         payment.setPaymentChannel(paymentChannel.toUpperCase());
         payment.setReferenceId(PaymentProcessorSingleton.getInstance().nextReference(mode, paymentChannel));
         payment.setPaymentDate(LocalDateTime.now());
-        payment.setStatus(success ? PaymentStatus.SUCCESSFUL : PaymentStatus.FAILED);
+        payment.setStatus(success ? (offline ? PaymentStatus.PENDING_VERIFICATION : PaymentStatus.SUCCESSFUL) : PaymentStatus.FAILED);
         paymentRepo.save(payment);
 
-        // Update invoice status
-        if (success) {
+        // Online payments settle immediately. Offline cash needs accountant verification.
+        if (success && !offline) {
             invoice.setStatus(InvoiceStatus.PAID);
         }
         invoiceRepo.save(invoice);
@@ -146,6 +149,54 @@ public class PaymentService implements StudentPaymentOperations, AccountantPayme
 
     @Override
     @Transactional
+    public PaymentDispute raiseDispute(Long studentId, Long paymentId, String reason) {
+        Payment payment = paymentRepo.findById(paymentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + paymentId));
+        if (!studentId.equals(payment.getStudentId())) {
+            throw new RuntimeException("You can dispute only your own payments.");
+        }
+        if (reason == null || reason.isBlank()) {
+            throw new RuntimeException("Dispute reason is required.");
+        }
+        Student student = new Student();
+        student.setId(studentId);
+        PaymentDispute dispute = new PaymentDispute();
+        dispute.setPayment(payment);
+        dispute.setStudent(student);
+        dispute.setReason(reason.trim());
+        return disputeRepo.save(dispute);
+    }
+
+    @Override
+    public byte[] generateReceipt(Long studentId, Long paymentId) {
+        Payment payment = paymentRepo.findById(paymentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + paymentId));
+        if (!studentId.equals(payment.getStudentId())) {
+            throw new RuntimeException("You can download receipts only for your own payments.");
+        }
+        if (payment.getStatus() != PaymentStatus.SUCCESSFUL) {
+            throw new RuntimeException("Receipt is available only for successful payments.");
+        }
+        String receipt = """
+                HOSTEL/PG MANAGEMENT SYSTEM
+                Payment Receipt
+
+                Payment ID: PMT-%s
+                Invoice ID: INV-%s
+                Student ID: %s
+                Amount: %.2f
+                Mode: %s / %s
+                Reference: %s
+                Paid At: %s
+                Status: %s
+                """.formatted(payment.getPaymentId(), payment.getInvoiceId(), payment.getStudentId(),
+                payment.getAmount(), payment.getPaymentMode(), payment.getPaymentChannel(),
+                payment.getReferenceId(), payment.getPaymentDate(), payment.getStatus());
+        return receipt.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    @Override
+    @Transactional
     public Payment approveRefund(Long paymentId) {
         Payment payment = paymentRepo.findById(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + paymentId));
@@ -165,8 +216,50 @@ public class PaymentService implements StudentPaymentOperations, AccountantPayme
     }
 
     @Override
+    @Transactional
+    public Payment verifyOfflinePayment(Long paymentId) {
+        Payment payment = paymentRepo.findById(paymentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + paymentId));
+
+        if (!"OFFLINE".equalsIgnoreCase(payment.getPaymentMode())) {
+            throw new RuntimeException("Only offline payments need verification.");
+        }
+        if (payment.getStatus() != PaymentStatus.PENDING_VERIFICATION) {
+            throw new RuntimeException("Only pending offline payments can be verified.");
+        }
+
+        payment.setStatus(PaymentStatus.SUCCESSFUL);
+        invoiceRepo.findById(payment.getInvoiceId()).ifPresent(invoice -> {
+            invoice.setStatus(InvoiceStatus.PAID);
+            invoiceRepo.save(invoice);
+        });
+        return paymentRepo.save(payment);
+    }
+
+    @Override
     public List<Payment> getPendingRefundRequests() {
         return paymentRepo.findAllByStatusOrderByPaymentDateDesc(PaymentStatus.REFUND_REQUESTED);
+    }
+
+    @Override
+    public List<Payment> getPendingOfflinePayments() {
+        return paymentRepo.findAllByStatusAndPaymentModeOrderByPaymentDateDesc(PaymentStatus.PENDING_VERIFICATION, "OFFLINE");
+    }
+
+    @Override
+    public List<PaymentDispute> getOpenDisputes() {
+        return disputeRepo.findByStatusOrderByCreatedAtDesc(PaymentDisputeStatus.OPEN);
+    }
+
+    @Override
+    @Transactional
+    public PaymentDispute resolveDispute(Long disputeId, String resolutionNote) {
+        PaymentDispute dispute = disputeRepo.findById(disputeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment dispute not found: " + disputeId));
+        dispute.setStatus(PaymentDisputeStatus.RESOLVED);
+        dispute.setResolutionNote(resolutionNote == null ? "" : resolutionNote.trim());
+        dispute.setResolvedAt(LocalDateTime.now());
+        return disputeRepo.save(dispute);
     }
 
     private void validatePaymentInput(String mode,
